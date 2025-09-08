@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="xy">
+    <file>Odoo.JPG</file>
+  </qresource>
+  <qresource prefix="imgInventor">
+    <file>Imagen.png</file>
+  </qresource>
+</RCC>
