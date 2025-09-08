@@ -184,13 +184,12 @@ def API_Odoo(codigonuevo):
             print("Error:", error)
     
 
-def API_Autodesk_Inventor_imput(codigonuevo):    
+def API_Autodesk_Inventor_imput(codigonuevo, designer):    
     codigonuevo = form_odoo.txtCodigo.text()     
     cate = form_odoo.txtCategoria.text()
     cat1 = form_odoo.txtCat1.text()
     cat2 = form_odoo.txtCat2.text()
-    cat3 = form_odoo.txtCat3.text() 
-    designer = form_odoo.lblMensaje_6.text() 
+    cat3 = form_odoo.txtCat3.text()
     autor = odoo_connection.get('current_user_email', '') # Obtenemos el email del usuario logueado
     palabclave = form_odoo.textPalabraClave.toPlainText()
     product_ids = obtener_id_product()
@@ -376,7 +375,7 @@ def on_click_validar():
         form_odoo.txtMasa.setText(str(round(masa/1000,2)))
         form_odoo.txtMasa.setReadOnly(True)
         form_odoo.lblMensaje.setText("Datos obtenidos del aplicativo Autodesk Inventor Professional.")
-        form_odoo.lblMensaje_6.setText(userlbl)
+        # form_odoo.lblMensaje_6.setText(userlbl) # <-- Eliminamos esta línea porque el widget ya no existe
         form_odoo.txtCategoria.setText(categoria_inventor)
         form_odoo.txtCategoria.setReadOnly(True)
         form_odoo.lblMens1.setText("Bienvenido,"+ userlbl)
@@ -397,10 +396,28 @@ def obtener_id_product():
     return None
 
 def on_click(codigonuevo):
-    descripcionfor = form_odoo.ComboBoxDescripcion.currentText()           
+    descripcionfor = form_odoo.ComboBoxDescripcion.currentText()
+    # --- INICIO DE LA CORRECCIÓN ---
+    # Obtenemos el nombre del diseñador (userlbl) aquí, antes de llamar a las APIs.
+    usuario_logueado = odoo_connection.get('current_user_email', 'Desconocido')
+    if usuario_logueado == "admin@automate-corp.com": userlbl = "Administrador"
+    elif usuario_logueado == "it@automate-corp.com": userlbl = "Christiam Fernando Rey Anaya"
+    elif usuario_logueado == "ingenieria1@automate-corp.com": userlbl = "Jesus Alberto Ariza Gil"
+    elif usuario_logueado == "ingenieria2@automate-corp.com": userlbl = "Sara Zambrano Naranjo"
+    elif usuario_logueado == "ingenieria3@automate-corp.com": userlbl = "Carlos Alberto Chavarria Jaramillo"
+    elif usuario_logueado == "ingenieria4@automate-corp.com": userlbl = "Juan Carlos Atehortúa Montes"
+    elif usuario_logueado == "ingenieria5@automate-corp.com": userlbl = "Andres Felipe Marin Quintero"
+    elif usuario_logueado == "ingenieria6@automate-corp.com": userlbl = "Daniel Londoño Serna"
+    elif usuario_logueado == "electrica@automate-corp.com": userlbl = "Monica Yepes Medina"
+    elif usuario_logueado == "produccion@automate-corp.com": userlbl = "Johan Sebastian Gaviria Ruiz"
+    elif usuario_logueado == "sistemas@automate-corp.com": userlbl = "Juan Andres Pernet"
+    elif usuario_logueado == "operaciones@automate-corp.com": userlbl = "Juan Alejandro Diaz"
+    else:
+        userlbl = usuario_logueado
+    # --- FIN DE LA CORRECCIÓN ---
     API_Odoo(codigonuevo)
     obtener_id_product()
-    API_Autodesk_Inventor_imput(codigonuevo)    
+    API_Autodesk_Inventor_imput(codigonuevo, userlbl) # Pasamos el nombre del diseñador
     form_odoo.lblMensaje_5.setText("Producto cargado correctamente en Autodesk Inventor, ERP Odoo, BD Sizfra")    
     GrSiFor = form_grupo.ComboBoxGrupo.currentText()
     if GrSiFor == "MATERIA PRIMA ENSAMBLE":
@@ -509,6 +526,17 @@ def toggle_password_visibility():
         form_login.txtClave.setEchoMode(QLineEdit.EchoMode.Password)
         form_login.btnMostrarClave.setText("Ver")
 
+def on_click_cerrar_sesion():
+    """Cierra la sesión actual, borra el archivo de config y vuelve a la pantalla de login."""
+    print("INFO: Cerrando sesión.")
+    # Borrar el archivo de configuración para olvidar al usuario
+    if os.path.exists(CONFIG_FILE):
+        os.remove(CONFIG_FILE)
+        print("INFO: Archivo de sesión eliminado.")
+    # Cerrar la ventana de grupo y mostrar la de login
+    form_grupo.close()
+    form_login.show()
+
 def run_app(inventor_instance):
     global inv, invApp, invDoc, app, form_login, form_grupo, form_odoo, form, formLM, odoo_connection, categorias_3
 
@@ -571,6 +599,7 @@ def run_app(inventor_instance):
     form_login.btnCerrarApp.clicked.connect(on_clickCerrar)
     
     form_grupo.btnConfirmar.clicked.connect(abrir_formulario_principal)
+    form_grupo.btnCerrarSesion.clicked.connect(on_click_cerrar_sesion) # <-- NUEVA CONEXIÓN
     
     form_odoo.btn650.clicked.connect(abrir_formulario_650)
     form_odoo.btn730.clicked.connect(abrir_formulario_730)
