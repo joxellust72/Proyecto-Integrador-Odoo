@@ -4,9 +4,9 @@ import xmlrpc.client  # Libreria API Odoo
 import base64
 import sys
 import os # <--- IMPORTANTE: Añadimos el módulo 'os'
+import json # <-- Añadimos el módulo JSON para manejar la configuración
 from PyQt6 import QtWidgets, uic
-import socket
-from PyQt6.QtWidgets import QApplication, QMainWindow, QComboBox, QVBoxLayout, QWidget, QPushButton
+from PyQt6.QtWidgets import QApplication, QMainWindow, QComboBox, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox
 from PyQt6.uic import loadUi
 
 # --- CONSTRUCCIÓN DE RUTAS ABSOLUTAS ---
@@ -14,23 +14,14 @@ from PyQt6.uic import loadUi
 # Obtenemos la ruta del directorio donde se encuentra este script.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Construimos la ruta completa para cada archivo .ui
+FORM_LOGIN_UI = os.path.join(BASE_DIR, "FormularioLogin.ui") # <-- NUEVO
 FORM_GRUPO_UI = os.path.join(BASE_DIR, "FormularioGrupo.ui")
 FORM_ODOO_UI = os.path.join(BASE_DIR, "FormularioOdoo.ui")
 FORM_MATERIAL_BASE_UI = os.path.join(BASE_DIR, "FormularioMaterialBase.ui")
 FORM_LISTA_MATERIALES_UI = os.path.join(BASE_DIR, "FormularioListaMateriales.ui")
+CONFIG_FILE = os.path.join(BASE_DIR, "config.json") # <-- Ruta para nuestro archivo de sesión
 # --- FIN DE LA CONSTRUCCIÓN DE RUTAS ---
 
-
-def check_internet_connection():
-    try:
-        # Intenta crear un socket para conectarse a un host en Internet (por ejemplo, google.com)
-        socket.create_connection(("www.google.com", 80))
-        form_odoo.lblMensaje_4.setText("Conexión a Internet disponible.")
-        return True
-    except OSError:
-        # Si ocurre un error al intentar conectar, devuelve False
-        form_odoo.lblMensaje_4.setText("No hay conexión a Internet, intente de nuevamente mas tarde.")
-        return False
 
 def validar_docActivo_inventor():   
     try:
@@ -100,7 +91,7 @@ def API_Odoo(codigonuevo):
     acabado = form_odoo.txtAcabado.text()
     descripcion = form_odoo.txtDescripcion.text()
     subject = form_odoo.txtAlmacena.text()    
-    email = form_odoo.ComboBoxEmail.currentText()
+    # email = form_odoo.ComboBoxEmail.currentText() # Eliminado, ya no existe en el form
     palabclave = form_odoo.textPalabraClave.toPlainText()
     path = inv.ActiveDocument.FullFileName # Usamos la instancia global 'inv'
 
@@ -145,27 +136,6 @@ def API_Odoo(codigonuevo):
         route = 42
         categ = 11
     
-    usuario = form_odoo.ComboBoxEmail.currentText()
-    clave = form_odoo.txtClave.text() 
-    odoo_url = 'http://192.168.10.13:8069'
-    odoo_db = 'PruebaCFReA'
-
-
-    try:
-        # Usamos una conexión local para la autenticación del usuario actual
-        local_common = xmlrpc.client.ServerProxy(f'{odoo_url}/xmlrpc/2/common')
-        local_uid = local_common.authenticate(odoo_db, usuario, clave, {})
-        if not local_uid:
-            form_odoo.lblMensaje.setText("Error de autenticación. Verifique usuario/clave.")
-            return
-        # Para crear el producto, usamos la conexión global con permisos de admin
-        models = odoo_connection['models']
-        uid = odoo_connection['uid']
-        odoo_pass = odoo_connection['pass']
-    except Exception as auth_err:
-        print(f"Error de conexión con Odoo: {auth_err}")
-        form_odoo.lblMensaje.setText("Error de conexión con Odoo.")
-        return
 
     new_product_data = {
         'name': nombre,
@@ -197,7 +167,7 @@ def API_Odoo(codigonuevo):
     }
 
     try:
-        new_product_id = models.execute_kw(odoo_db, uid, odoo_pass,'product.template', 'create', [new_product_data])                                                
+        new_product_id = odoo_connection['models'].execute_kw(odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'],'product.template', 'create', [new_product_data])
         print("Nuevo producto creado en el ERP Odoo con ID:", new_product_id)
         form_odoo.lblMens1.setText(f"Nuevo producto creado en el ERP Odoo con ID: {new_product_id}")
                     
@@ -221,7 +191,7 @@ def API_Autodesk_Inventor_imput(codigonuevo):
     cat2 = form_odoo.txtCat2.text()
     cat3 = form_odoo.txtCat3.text() 
     designer = form_odoo.lblMensaje_6.text() 
-    autor = form_odoo.ComboBoxEmail.currentText()
+    autor = odoo_connection.get('current_user_email', '') # Obtenemos el email del usuario logueado
     palabclave = form_odoo.textPalabraClave.toPlainText()
     product_ids = obtener_id_product()
     new_product_id = product_ids   
@@ -347,10 +317,12 @@ def abrir_formulario_principal():
     return(codigo)
 
 def abrir_formulario_grupo():
+    form_login.close()
     form_grupo.show()
 
 def on_clickCerrar():
-    app.quit()     
+    if app:
+        app.quit()     
     
 def on_click_validar():
     print("INFO: Botón 'Validar' presionado. Rellenando campos desde el simulador.")     
@@ -366,21 +338,23 @@ def on_click_validar():
     codigo_inventor = props.Item("Design Tracking Properties").Item("Part Number").Value
     categoria_inventor = props.Item("Inventor Document Summary Information").Item("Category").Value
     
-    usuario = form_odoo.ComboBoxEmail.currentText()    
-    if usuario == "admin@automate-corp.com": userlbl = "Administrador"  
-    elif usuario == "it@automate-corp.com": userlbl = "Christiam Fernando Rey Anaya"          
-    elif usuario == "ingenieria1@automate-corp.com": userlbl = "Jesus Alberto Ariza Gil"    
-    elif usuario == "ingenieria2@automate-corp.com": userlbl = "Sara Zambrano Naranjo"
-    elif usuario == "ingenieria3@automate-corp.com": userlbl = "Carlos Alberto Chavarria Jaramillo"
-    elif usuario == "ingenieria4@automate-corp.com": userlbl = "Juan Carlos Atehortúa Montes" 
-    elif usuario == "ingenieria5@automate-corp.com": userlbl = "Andres Felipe Marin Quintero" 
-    elif usuario == "ingenieria6@automate-corp.com": userlbl = "Daniel Londoño Serna" 
-    elif usuario == "electrica@automate-corp.com": userlbl = "Monica Yepes Medina" 
-    elif usuario == "produccion@automate-corp.com": userlbl = "Johan Sebastian Gaviria Ruiz"  
-    elif usuario == "sistemas@automate-corp.com": userlbl = "Juan Andres Pernet"   
-    elif usuario == "operaciones@automate-corp.com": userlbl = "Juan Alejandro Diaz"                
+    # Obtenemos el email del usuario que inició sesión
+    usuario_logueado = odoo_connection.get('current_user_email', 'Desconocido')
+    
+    if usuario_logueado == "admin@automate-corp.com": userlbl = "Administrador"  
+    elif usuario_logueado == "it@automate-corp.com": userlbl = "Christiam Fernando Rey Anaya"          
+    elif usuario_logueado == "ingenieria1@automate-corp.com": userlbl = "Jesus Alberto Ariza Gil"    
+    elif usuario_logueado == "ingenieria2@automate-corp.com": userlbl = "Sara Zambrano Naranjo"
+    elif usuario_logueado == "ingenieria3@automate-corp.com": userlbl = "Carlos Alberto Chavarria Jaramillo"
+    elif usuario_logueado == "ingenieria4@automate-corp.com": userlbl = "Juan Carlos Atehortúa Montes" 
+    elif usuario_logueado == "ingenieria5@automate-corp.com": userlbl = "Andres Felipe Marin Quintero" 
+    elif usuario_logueado == "ingenieria6@automate-corp.com": userlbl = "Daniel Londoño Serna" 
+    elif usuario_logueado == "electrica@automate-corp.com": userlbl = "Monica Yepes Medina" 
+    elif usuario_logueado == "produccion@automate-corp.com": userlbl = "Johan Sebastian Gaviria Ruiz"  
+    elif usuario_logueado == "sistemas@automate-corp.com": userlbl = "Juan Andres Pernet"   
+    elif usuario_logueado == "operaciones@automate-corp.com": userlbl = "Juan Alejandro Diaz"                
     else:
-        form_odoo.lblMens1.setText("Selecciona el usuario") 
+        userlbl = usuario_logueado
                      
     if nombre == "":        
         form_odoo.lblMensaje_5.setText("No se encontraron datos en el documento simulado.")
@@ -469,15 +443,82 @@ def metodo_categorias(cate2, connection):
         print(f"Error en metodo_categorias: {e}")
         return None
 
+def load_session_config():
+    """Carga la configuración de la última sesión desde config.json."""
+    try:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                last_user = config.get('last_user')
+                last_pass = config.get('last_pass')
+
+                if last_user and last_pass:
+                    index = form_login.ComboBoxEmail.findText(last_user)
+                    if index != -1:
+                        form_login.ComboBoxEmail.setCurrentIndex(index)
+                    form_login.txtClave.setText(last_pass)
+                    print("INFO: Credenciales de sesión anterior cargadas.")
+                    # Intentar login automático
+                    on_click_iniciar_sesion()
+    except Exception as e:
+        print(f"ADVERTENCIA: No se pudo cargar la configuración de sesión: {e}")
+
+def on_click_iniciar_sesion():
+    """Intenta autenticar al usuario en Odoo y avanza si tiene éxito."""
+    usuario = form_login.ComboBoxEmail.currentText()
+    clave = form_login.txtClave.text()
+
+    if not usuario or not clave:
+        form_login.lblMensaje.setText("Por favor, ingrese correo y contraseña.")
+        return
+
+    try:
+        form_login.lblMensaje.setText("Autenticando...")
+        # Usamos la conexión global de admin para verificar las credenciales del usuario
+        local_common = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/common')
+        user_uid = local_common.authenticate(odoo_connection['db'], usuario, clave, {})
+
+        if user_uid:
+            print("INFO: Autenticación exitosa.")
+            # Guardar sesión exitosa
+            odoo_connection['current_user_email'] = usuario # Guardamos el email del usuario actual
+            try:
+                with open(CONFIG_FILE, 'w') as f:
+                    json.dump({'last_user': usuario, 'last_pass': clave}, f)
+            except Exception as e:
+                print(f"ADVERTENCIA: No se pudo guardar el archivo de sesión: {e}")
+            
+            # Avanzar al siguiente formulario
+            abrir_formulario_grupo()
+        else:
+            form_login.lblMensaje.setText("Error de autenticación. Verifique sus credenciales.")
+            # Borrar config si las credenciales guardadas fallaron
+            if os.path.exists(CONFIG_FILE):
+                os.remove(CONFIG_FILE)
+
+    except Exception as e:
+        form_login.lblMensaje.setText("Error de conexión con Odoo.")
+        print(f"ERROR: Fallo en la conexión durante el login: {e}")
+
+def toggle_password_visibility():
+    """Cambia la visibilidad del campo de la contraseña en el formulario de login."""
+    if form_login.txtClave.echoMode() == QLineEdit.EchoMode.Password:
+        form_login.txtClave.setEchoMode(QLineEdit.EchoMode.Normal)
+        form_login.btnMostrarClave.setText("Ocultar")
+    else:
+        form_login.txtClave.setEchoMode(QLineEdit.EchoMode.Password)
+        form_login.btnMostrarClave.setText("Ver")
+
 def run_app(inventor_instance):
-    global inv, invApp, invDoc, app, form_grupo, form_odoo, form, formLM, odoo_connection, categorias_3
+    global inv, invApp, invDoc, app, form_login, form_grupo, form_odoo, form, formLM, odoo_connection, categorias_3
 
     inv = inventor_instance
     invApp = inventor_instance
     invDoc = invApp.ActiveDocument
 
-
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    # Cargar todos los formularios
+    form_login = uic.loadUi(FORM_LOGIN_UI) # <-- NUEVO
     form_grupo = uic.loadUi(FORM_GRUPO_UI)
     form_odoo = uic.loadUi(FORM_ODOO_UI)
     form_odoo.ComboBoxDescripcion.clear()
@@ -485,65 +526,62 @@ def run_app(inventor_instance):
     formLM = uic.loadUi(FORM_LISTA_MATERIALES_UI)
     form_odoo.lblMensaje_5.setText("Autodesk Inventor tiene un documento activo.")
 
-    if check_internet_connection():
-        
-        odoo_connection = {
-            "url": 'http://192.168.10.13:8069',
-            "db": 'PruebaCFReA',
-            "user": 'it@automate-corp.com',
-            "pass": 'Auto1234-',
-            "uid": None,
-            "models": None
-        }
+    odoo_connection = {
+        "url": 'http://192.168.10.13:8069',
+        "db": 'PruebaCFReA',
+        "user": 'it@automate-corp.com', # Usuario admin para operaciones
+        "pass": 'Auto1234-',
+        "uid": None,
+        "models": None
+    }
 
+    try:
+        common = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/common')
+        odoo_connection['uid'] = common.authenticate(odoo_connection['db'], odoo_connection['user'], odoo_connection['pass'], {})
+        odoo_connection['models'] = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/object')
+    except Exception as odoo_conn_err:
+        print(f"ERROR: No se pudo conectar a Odoo. {odoo_conn_err}")
+        QMessageBox.critical(None, "Error de Conexión", f"No se pudo conectar a Odoo: {odoo_conn_err}")
+        return
+
+    def obtener_descripciones_categorias_3():
+        if not odoo_connection or not odoo_connection.get('models'): return []
         try:
-            common = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/common')
-            odoo_connection['uid'] = common.authenticate(odoo_connection['db'], odoo_connection['user'], odoo_connection['pass'], {})
-            odoo_connection['models'] = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/object')
-        except Exception as odoo_conn_err:
-            print(f"ERROR: No se pudo conectar a Odoo. {odoo_conn_err}")
-            odoo_connection = None
+            conn = odoo_connection
+            categorias_3 = conn['models'].execute_kw(conn['db'], conn['uid'], conn['pass'], 'x_categoria_3', 'search_read', [], {'fields': ['id', 'x_name', 'x_descripcion']})
+            return categorias_3
+        except Exception as cat_err:
+            print(f"Error obteniendo categorías de Odoo: {cat_err}")
+            return []
 
-        def obtener_descripciones_categorias_3():
-            if not odoo_connection or not odoo_connection.get('models'): return []
-            try:
-                conn = odoo_connection
-                categorias_3 = conn['models'].execute_kw(conn['db'], conn['uid'], conn['pass'], 'x_categoria_3', 'search_read', [], {'fields': ['id', 'x_name', 'x_descripcion']})
-                return categorias_3
-            except Exception as cat_err:
-                print(f"Error obteniendo categorías de Odoo: {cat_err}")
-                return []
+    def correr_progrma_clases():
+        form_odoo.ComboBoxDescripcion.clear()
+        if categorias_3 is not None and len(categorias_3) > 0:
+            for categoria in categorias_3:
+                descripcion = categoria.get('x_name', '')
+                form_odoo.ComboBoxDescripcion.addItem(descripcion)
+            form_odoo.ComboBoxDescripcion.currentIndexChanged.connect(actualizar_labels_desde_combobox)
 
-        
+    categorias_3 = obtener_descripciones_categorias_3()
+    correr_progrma_clases()
 
-        def correr_progrma_clases():
-            form_odoo.ComboBoxDescripcion.clear()
-            if categorias_3 is not None and len(categorias_3) > 0:
-                for categoria in categorias_3:
-                    descripcion = categoria.get('x_name', '')
-                    form_odoo.ComboBoxDescripcion.addItem(descripcion)
-                form_odoo.ComboBoxDescripcion.currentIndexChanged.connect(actualizar_labels_desde_combobox)
-
-        categorias_3 = obtener_descripciones_categorias_3()
-        correr_progrma_clases()
-        
-    else:
-        # No es necesario mostrar los formularios aquí si no hay internet,
-        # ya que la app se cerrará de todos modos.
-        QtWidgets.QMessageBox.critical(None, "Error", "No hay conexión a Internet, intente de nuevamente mas tarde.")
-        return # Salimos de la función run_app
-
+    # --- Conexiones de los formularios ---
+    form_login.btnIniciarSesion.clicked.connect(on_click_iniciar_sesion)
+    form_login.btnMostrarClave.clicked.connect(toggle_password_visibility)
+    form_login.btnCerrarApp.clicked.connect(on_clickCerrar)
+    
+    form_grupo.btnConfirmar.clicked.connect(abrir_formulario_principal)
+    
     form_odoo.btn650.clicked.connect(abrir_formulario_650)
     form_odoo.btn730.clicked.connect(abrir_formulario_730)
     form_odoo.btnCerrarPrin.clicked.connect(on_clickCerrar)
-    form_grupo.btnConfirmar.clicked.connect(abrir_formulario_principal)
     form_odoo.btnEnviar.clicked.connect(on_click)
     form_odoo.btnValidar.clicked.connect(on_click_validar)
-    form_odoo.btnGenerarCod.clicked.connect(abrir_formulario_grupo)
     
-    # Inicia mostrando el formulario de grupo
-    abrir_formulario_grupo()
-    #validar_barcode() # Intenta rellenar los campos al inicio
+    # Inicia mostrando el formulario de LOGIN
+    form_login.show()
+    load_session_config() # Intentar autologin
+
     sys.exit(app.exec())
 
 def abrir_formulario_650():
