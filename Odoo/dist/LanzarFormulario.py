@@ -21,6 +21,7 @@ FORM_MATERIAL_BASE_UI = os.path.join(BASE_DIR, "FormularioMaterialBase.ui")
 FORM_LISTA_MATERIALES_UI = os.path.join(BASE_DIR, "FormularioListaMateriales.ui")
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json") # <-- Ruta para nuestro archivo de sesión
 # --- FIN DE LA CONSTRUCCIÓN DE RUTAS ---
+from ui_utils import show_error_message
 
 
 def validar_docActivo_inventor():   
@@ -180,12 +181,11 @@ def API_Odoo(codigonuevo):
             form_odoo.lblMens1.setText(f"Código de producto repetido: {codigo_repetido}")
             form_odoo.lblMensaje.setText("El código de barras está repetido. Saliendo del programa.")
             return True
-        else:
-            print("Error:", error)
+        raise # Si es otro tipo de Fault, lo relanzamos para que lo capture el hook global
     
 
 def API_Autodesk_Inventor_imput(codigonuevo, designer):    
-    codigonuevo = form_odoo.txtCodigo.text()     
+    codigonuevo = form_odoo.txtCodigo.text()
     cate = form_odoo.txtCategoria.text()
     cat1 = form_odoo.txtCat1.text()
     cat2 = form_odoo.txtCat2.text()
@@ -194,116 +194,108 @@ def API_Autodesk_Inventor_imput(codigonuevo, designer):
     palabclave = form_odoo.textPalabraClave.toPlainText()
     product_ids = obtener_id_product()
     new_product_id = product_ids   
-    try:
-        part = invDoc.ComponentDefinition
-        part_number_property = part.Document.PropertySets.Item("Design Tracking Properties").Item("Part Number")
-        new_part_number = codigonuevo
-        part_number_property.Value = new_part_number
-        print("Se ha establecido el nuevo número de pieza en Autodesk Inventor:", new_part_number)
-        form_odoo.lblMensaje.setText(f"Se ha establecido el nuevo número de pieza en Autodesk Inventor: {new_part_number}")
-        
-        categoria_property = part.Document.PropertySets.Item("Inventor Document Summary Information").Item("Category")
-        new_categoria = cate.lower()
-        categoria_property.Value = new_categoria
-        print("Se ha establecido la nueva categoria de la pieza en Autodesk Inventor:", new_categoria)  
-        form_odoo.lblMensaje_4.setText(f"Se ha establecido la nueva categoria de la pieza en Autodesk Inventor: {new_categoria}")
-        
-        categoria_designer = part.Document.PropertySets.Item("Design Tracking Properties").Item("Designer")
-        new_designer = designer
-        categoria_designer.Value = new_designer 
-        print("Se ha establecido el diseñador de la pieza en Autodesk Inventor:", new_designer)  
-        
-        categoria_stock_number = part.Document.PropertySets.Item("Design Tracking Properties").Item("Stock Number")
-        new_stock_number = new_product_id 
-        categoria_stock_number.Value = new_stock_number 
-        print("Se ha establecido el diseñador de la pieza en Autodesk Inventor:", new_stock_number)    
-        
-        categoria_autor = part.Document.PropertySets.Item("Inventor Summary Information").Item("Author")
-        new_autor = autor
-        categoria_autor.Value = new_autor 
-        print("Se ha establecido el autor de la pieza en Autodesk Inventor:", new_autor)  
-        
-        categoria_PalabraClave = part.Document.PropertySets.Item("Inventor Summary Information").Item("Keywords")
-        new_PalabraClave = palabclave
-        categoria_PalabraClave.Value = new_PalabraClave 
-        print("Se ha establecido las palabras claves de la pieza en Autodesk Inventor:", new_PalabraClave)
-        form_odoo.lblMensaje_5.setText(f"Se ha establecido las palabras claves de la pieza en Autodesk Inventor: {new_PalabraClave}")   
-        
-        custom_properties = {
-            "Clase 1": cat1,
-            "Clase 2": cat2,
-            "Clase 3": cat3            
-        }
-        for property_name, value in custom_properties.items():
-            try:
-                custom_property = part.Document.PropertySets.Item("User Defined Properties").Item(property_name)
-                custom_property.Value = value
-                print(f"Se ha establecido la propiedad en Autodesk Inventor '{property_name}' con el valor: {value}")
-            except Exception as e:
-                print(f"Error al establecer la propiedad en Autodesk Inventor '{property_name}':", e)
+    
+    part = invDoc.ComponentDefinition
+    part_number_property = part.Document.PropertySets.Item("Design Tracking Properties").Item("Part Number")
+    new_part_number = codigonuevo
+    part_number_property.Value = new_part_number
+    print("Se ha establecido el nuevo número de pieza en Autodesk Inventor:", new_part_number)
+    form_odoo.lblMensaje.setText(f"Se ha establecido el nuevo número de pieza en Autodesk Inventor: {new_part_number}")
+    
+    categoria_property = part.Document.PropertySets.Item("Inventor Document Summary Information").Item("Category")
+    new_categoria = cate.lower()
+    categoria_property.Value = new_categoria
+    print("Se ha establecido la nueva categoria de la pieza en Autodesk Inventor:", new_categoria)  
+    form_odoo.lblMensaje_4.setText(f"Se ha establecido la nueva categoria de la pieza en Autodesk Inventor: {new_categoria}")
+    
+    categoria_designer = part.Document.PropertySets.Item("Design Tracking Properties").Item("Designer")
+    new_designer = designer
+    categoria_designer.Value = new_designer 
+    print("Se ha establecido el diseñador de la pieza en Autodesk Inventor:", new_designer)  
+    
+    categoria_stock_number = part.Document.PropertySets.Item("Design Tracking Properties").Item("Stock Number")
+    new_stock_number = new_product_id 
+    categoria_stock_number.Value = new_stock_number 
+    print("Se ha establecido el diseñador de la pieza en Autodesk Inventor:", new_stock_number)    
+    
+    categoria_autor = part.Document.PropertySets.Item("Inventor Summary Information").Item("Author")
+    new_autor = autor
+    categoria_autor.Value = new_autor 
+    print("Se ha establecido el autor de la pieza en Autodesk Inventor:", new_autor)  
+    
+    categoria_PalabraClave = part.Document.PropertySets.Item("Inventor Summary Information").Item("Keywords")
+    new_PalabraClave = palabclave
+    categoria_PalabraClave.Value = new_PalabraClave 
+    print("Se ha establecido las palabras claves de la pieza en Autodesk Inventor:", new_PalabraClave)
+    form_odoo.lblMensaje_5.setText(f"Se ha establecido las palabras claves de la pieza en Autodesk Inventor: {new_PalabraClave}")   
+    
+    custom_properties = {
+        "Clase 1": cat1,
+        "Clase 2": cat2,
+        "Clase 3": cat3            
+    }
+    for property_name, value in custom_properties.items():
+        try:
+            custom_property = part.Document.PropertySets.Item("User Defined Properties").Item(property_name)
+            custom_property.Value = value
+            print(f"Se ha establecido la propiedad en Autodesk Inventor '{property_name}' con el valor: {value}")
+        except Exception:
+            # Este error es menos crítico, podemos advertir y continuar
+            print(f"ADVERTENCIA: No se pudo establecer la propiedad personalizada '{property_name}' en Inventor.")
 
-        invDoc.Save()
-    except Exception as e:
-        print("Error en API_Autodesk_Inventor_imput: ", e)
-        print("El documento activo no es un archivo de pieza (part) o falló la simulación.")    
+    invDoc.Save()
 
 def validar_barcode():
-    try:           
-        props = inv.ActiveDocument.ComponentDefinition.Document.PropertySets
-        valbarcode = props.Item("Design Tracking Properties").Item("Part Number").Value
-        mate = props.Item("Design Tracking Properties").Item("Material").Value
-        descripcion = props.Item("Design Tracking Properties").Item("Description").Value
-        almacena = props.Item("Inventor Summary Information").Item("Subject").Value
-        acab = props.Item("Design Tracking Properties").Item("Appearance").Value
-        masa = props.Item("Design Tracking Properties").Item("Mass").Value
-        cat1 = props.Item("User Defined Properties").Item("Clase 1").Value
-        cat2 = props.Item("User Defined Properties").Item("Clase 2").Value
-        cat3 = props.Item("User Defined Properties").Item("Clase 3").Value
-        nomsis = props.Item("Inventor Summary Information").Item("Title").Value
-        volume = props.Item("Design Tracking Properties").Item("Volume").Value
-        cate = props.Item("Inventor Document Summary Information").Item("Category").Value
-        palabclave = props.Item("Inventor Summary Information").Item("Keywords").Value
-      
-        if valbarcode == "":                
-            form_odoo.lblMensaje.setText("Autodesk Inventor esta listo para recibir su carga.")
-            return False
-        else:                         
-            form_odoo.txtCodigo.setText(valbarcode)
-            form_odoo.txtCodigo.setReadOnly(True)
-            form_odoo.txtNombreSis.setText(nomsis)
-            form_odoo.txtNombreSis.setReadOnly(True)
-            form_odoo.txtCat1.setText(cat1)
-            form_odoo.txtCat1.setReadOnly(True)
-            form_odoo.txtCat2.setText(cat2)
-            form_odoo.txtCat2.setReadOnly(True)
-            form_odoo.txtCat3.setText(cat3)
-            form_odoo.txtCat3.setReadOnly(True)
-            form_odoo.txtMaterial.setText(mate)
-            form_odoo.txtMaterial.setReadOnly(True)
-            form_odoo.txtAcabado.setText(acab)
-            form_odoo.txtAcabado.setReadOnly(True)
-            form_odoo.txtMasa.setText(str(round(masa/1000,2)))
-            form_odoo.txtMasa.setReadOnly(True)
-            form_odoo.lblMensaje.setText("Datos obtenidos de Autodesk Inventor.")
-            form_grupo.close()
-            form_odoo.btnEnviar.setEnabled(False)
-            form_odoo.btnEnviar.setStyleSheet("background-color: gray; color: white")
-            form_odoo.txtDescripcion.setText(descripcion)
-            form_odoo.txtDescripcion.setReadOnly(True)
-            form_odoo.txtAlmacena.setText(almacena)
-            form_odoo.txtAlmacena.setReadOnly(True)
-            form_odoo.txtCategoria.setText(cate)
-            form_odoo.txtCategoria.setReadOnly(True)
-            form_odoo.txtVolume.setText(str(round(volume/1,2)))
-            form_odoo.txtVolume.setReadOnly(True)
-            form_odoo.textPalabraClave.setText(palabclave)
-            form_odoo.textPalabraClave.setReadOnly(True)
-            return True
-    except Exception as e:
-        print(f"Error en validar_barcode: {e}")
-        form_odoo.lblMensaje.setText("Error de comunicación con Autodesk Inventor")
-        # QtWidgets.QMessageBox.critical(None, "Error", "Error de comunicación con Autodesk Inventor")
+    props = inv.ActiveDocument.ComponentDefinition.Document.PropertySets
+    valbarcode = props.Item("Design Tracking Properties").Item("Part Number").Value
+    mate = props.Item("Design Tracking Properties").Item("Material").Value
+    descripcion = props.Item("Design Tracking Properties").Item("Description").Value
+    almacena = props.Item("Inventor Summary Information").Item("Subject").Value
+    acab = props.Item("Design Tracking Properties").Item("Appearance").Value
+    masa = props.Item("Design Tracking Properties").Item("Mass").Value
+    cat1 = props.Item("User Defined Properties").Item("Clase 1").Value
+    cat2 = props.Item("User Defined Properties").Item("Clase 2").Value
+    cat3 = props.Item("User Defined Properties").Item("Clase 3").Value
+    nomsis = props.Item("Inventor Summary Information").Item("Title").Value
+    volume = props.Item("Design Tracking Properties").Item("Volume").Value
+    cate = props.Item("Inventor Document Summary Information").Item("Category").Value
+    palabclave = props.Item("Inventor Summary Information").Item("Keywords").Value
+  
+    if valbarcode == "":                
+        form_odoo.lblMensaje.setText("Autodesk Inventor esta listo para recibir su carga.")
         return False
+    else:                         
+        form_odoo.txtCodigo.setText(valbarcode)
+        form_odoo.txtCodigo.setReadOnly(True)
+        form_odoo.txtNombreSis.setText(nomsis)
+        form_odoo.txtNombreSis.setReadOnly(True)
+        form_odoo.txtCat1.setText(cat1)
+        form_odoo.txtCat1.setReadOnly(True)
+        form_odoo.txtCat2.setText(cat2)
+        form_odoo.txtCat2.setReadOnly(True)
+        form_odoo.txtCat3.setText(cat3)
+        form_odoo.txtCat3.setReadOnly(True)
+        form_odoo.txtMaterial.setText(mate)
+        form_odoo.txtMaterial.setReadOnly(True)
+        form_odoo.txtAcabado.setText(acab)
+        form_odoo.txtAcabado.setReadOnly(True)
+        form_odoo.txtMasa.setText(str(round(masa/1000,2)))
+        form_odoo.txtMasa.setReadOnly(True)
+        form_odoo.lblMensaje.setText("Datos obtenidos de Autodesk Inventor.")
+        form_grupo.close()
+        form_odoo.btnEnviar.setEnabled(False)
+        form_odoo.btnEnviar.setStyleSheet("background-color: gray; color: white")
+        form_odoo.txtDescripcion.setText(descripcion)
+        form_odoo.txtDescripcion.setReadOnly(True)
+        form_odoo.txtAlmacena.setText(almacena)
+        form_odoo.txtAlmacena.setReadOnly(True)
+        form_odoo.txtCategoria.setText(cate)
+        form_odoo.txtCategoria.setReadOnly(True)
+        form_odoo.txtVolume.setText(str(round(volume/1,2)))
+        form_odoo.txtVolume.setReadOnly(True)
+        form_odoo.textPalabraClave.setText(palabclave)
+        form_odoo.textPalabraClave.setReadOnly(True)
+        return True
 
 def abrir_formulario_principal():
     codigo = generar_codigo_unico(form_grupo) 
@@ -448,17 +440,13 @@ def actualizar_labels_desde_combobox():
         return cate2 
 
 def metodo_categorias(cate2, connection):
-    if not connection or not connection.get('models'): return None
-    try:
-        variable = connection['models'].execute_kw(connection['db'], connection['uid'], connection['pass'], 'x_categoria_3', 'read', [[cate2]], {'fields': ['x_name', 'x_categoria_2']})
-        cate2_info = [variable[0]['id'], variable[0]['x_name']]
-        id_categoria_2 = variable[0]['x_categoria_2']
-        variable = connection['models'].execute_kw(connection['db'], connection['uid'], connection['pass'], 'x_categoria_2', 'read', [[id_categoria_2[0]]], {'fields': ['x_categoria_1']})
-        id_categoria_1 = variable[0]['x_categoria_1']
-        return {'categoria_1': id_categoria_1, 'categoria_2': id_categoria_2, 'categoria_3': cate2_info}
-    except Exception as e:
-        print(f"Error en metodo_categorias: {e}")
-        return None
+    if not connection or not connection.get('models'): return None    
+    variable = connection['models'].execute_kw(connection['db'], connection['uid'], connection['pass'], 'x_categoria_3', 'read', [[cate2]], {'fields': ['x_name', 'x_categoria_2']})
+    cate2_info = [variable[0]['id'], variable[0]['x_name']]
+    id_categoria_2 = variable[0]['x_categoria_2']
+    variable = connection['models'].execute_kw(connection['db'], connection['uid'], connection['pass'], 'x_categoria_2', 'read', [[id_categoria_2[0]]], {'fields': ['x_categoria_1']})
+    id_categoria_1 = variable[0]['x_categoria_1']
+    return {'categoria_1': id_categoria_1, 'categoria_2': id_categoria_2, 'categoria_3': cate2_info}
 
 def load_session_config():
     """Carga la configuración de la última sesión desde config.json."""
@@ -513,9 +501,10 @@ def on_click_iniciar_sesion():
             if os.path.exists(CONFIG_FILE):
                 os.remove(CONFIG_FILE)
 
-    except Exception as e:
+    except xmlrpc.client.ProtocolError as err:
+        # Error específico de conexión (ej. URL incorrecta, servidor no responde)
+        show_error_message("Error de Conexión", f"No se pudo conectar a Odoo en la URL:\n{odoo_connection['url']}\n\nVerifique la conexión de red o la configuración del servidor.", detailed_text=str(err))
         form_login.lblMensaje.setText("Error de conexión con Odoo.")
-        print(f"ERROR: Fallo en la conexión durante el login: {e}")
 
 def toggle_password_visibility():
     """Cambia la visibilidad del campo de la contraseña en el formulario de login."""
@@ -563,24 +552,17 @@ def run_app(inventor_instance):
         "models": None
     }
 
-    try:
-        common = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/common')
-        odoo_connection['uid'] = common.authenticate(odoo_connection['db'], odoo_connection['user'], odoo_connection['pass'], {})
-        odoo_connection['models'] = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/object')
-    except Exception as odoo_conn_err:
-        print(f"ERROR: No se pudo conectar a Odoo. {odoo_conn_err}")
-        QMessageBox.critical(None, "Error de Conexión", f"No se pudo conectar a Odoo: {odoo_conn_err}")
-        return
+    # La conexión inicial se moverá al login para manejar errores allí.
+    # Aquí solo preparamos el diccionario.
+    common = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/common')
+    odoo_connection['uid'] = common.authenticate(odoo_connection['db'], odoo_connection['user'], odoo_connection['pass'], {})
+    odoo_connection['models'] = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/object')
 
     def obtener_descripciones_categorias_3():
         if not odoo_connection or not odoo_connection.get('models'): return []
-        try:
-            conn = odoo_connection
-            categorias_3 = conn['models'].execute_kw(conn['db'], conn['uid'], conn['pass'], 'x_categoria_3', 'search_read', [], {'fields': ['id', 'x_name', 'x_descripcion']})
-            return categorias_3
-        except Exception as cat_err:
-            print(f"Error obteniendo categorías de Odoo: {cat_err}")
-            return []
+        conn = odoo_connection
+        categorias_3 = conn['models'].execute_kw(conn['db'], conn['uid'], conn['pass'], 'x_categoria_3', 'search_read', [], {'fields': ['id', 'x_name', 'x_descripcion']})
+        return categorias_3
 
     def correr_progrma_clases():
         form_odoo.ComboBoxDescripcion.clear()
