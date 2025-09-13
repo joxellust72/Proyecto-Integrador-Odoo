@@ -242,9 +242,9 @@ color: rgb(255, 255, 255);
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="ComboBoxMaterialBase">
+       <widget class="QLineEdit" name="txtMaterialBase">
         <property name="placeholderText">
-         <string>MATERIAL BASE</string>
+         <string>Código del Material Base (ej. 700...)</string>
         </property>
        </widget>
       </item>
