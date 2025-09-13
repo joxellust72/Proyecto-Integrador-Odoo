@@ -309,7 +309,15 @@ def abrir_formulario_principal():
 
 def abrir_formulario_grupo():
     form_login.close()
+    global invDoc # <-- Necesitamos modificar la variable global
+    # --- SIMULACIÓN MEJORADA ---
+    # Simulamos que el usuario crea un nuevo documento en Inventor
+    # antes de generar un código.
+    # Actualizamos tanto la instancia de la app como nuestra variable global invDoc.
+    invDoc = inv.CreateNewDocument()
     form_grupo.show()
+    print(f"INFO: Nuevo documento simulado '{invDoc.Name}' está activo.")
+    # --- FIN SIMULACIÓN ---
 
 def on_clickCerrar():
     if app:
@@ -352,8 +360,10 @@ def on_click_validar():
         return False
     else:
         # Rellenamos los campos que faltaban
-        form_odoo.txtCodigo.setText(codigo_inventor)
-        form_odoo.txtCodigo.setReadOnly(True)
+        # --- CORRECCIÓN CLAVE ---
+        # No sobrescribimos el código si ya fue generado.
+        if not form_odoo.txtCodigo.text():
+            form_odoo.txtCodigo.setText(codigo_inventor)
         form_odoo.txtDescripcion.setText(descripcion)
         form_odoo.txtDescripcion.setReadOnly(True)
         form_odoo.txtAlmacena.setText(almacena)
@@ -588,6 +598,7 @@ def run_app(inventor_instance):
     form_odoo.btnCerrarPrin.clicked.connect(on_clickCerrar)
     form_odoo.btnEnviar.clicked.connect(on_click)
     form_odoo.btnValidar.clicked.connect(on_click_validar)
+    form_odoo.btnGenerarCod.clicked.connect(abrir_formulario_grupo)
     
     # Inicia mostrando el formulario de LOGIN
     form_login.show()
@@ -603,7 +614,10 @@ def abrir_formulario_650():
     
 
 def abrir_formulario_730():
+    global invDoc
     # Pasa la instancia 'inv' y la app existente al otro módulo
     import LanzarMaterialBase1
+    # Creamos un documento específico para el grupo 730 que contendrá la iProperty "Codigo Sizfra"
+    invDoc = inv.CreateNewDocument(group_id="730")
     LanzarMaterialBase1.run_material_base(inv, app)
     form_odoo.close() # Cierra el formulario principal

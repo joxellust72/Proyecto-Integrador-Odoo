@@ -863,6 +863,9 @@ QPushButton:hover{
 </string>
       </property>
       <property name="text">
+       <string>GENERAR CODIGO</string>
+      </property>
+      <property name="objectName">
        <string>600</string>
       </property>
      </widget>
