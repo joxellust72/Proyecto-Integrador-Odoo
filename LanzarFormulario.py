@@ -54,7 +54,7 @@ def validar_docActivo_inventor():
         return True # Devolvemos True para que la ejecución continúe
     
 def valida_cate_grupo():
-    GrSiFor = form_grupo.ComboBoxGrupo.currentText()    
+    GrSiFor = form_grupo.property("selected_group") # Usamos la propiedad que guardamos
     if GrSiFor == "MATERIA PRIMA ENSAMBLE":       
         form_odoo.txtCategoria.setText("MATERIA PRIMA ENSAMBLE")
     elif GrSiFor == "PRE-ENSAMBLES":        
@@ -63,7 +63,7 @@ def valida_cate_grupo():
         form_odoo.txtCategoria.setText("MATERIA PRIMA PROCESADA")
                   
 def generar_codigo_unico(form_grupo):
-    GrSiFor = form_grupo.ComboBoxGrupo.currentText()
+    GrSiFor = form_grupo.property("selected_group") # Usamos la propiedad que guardamos
     if GrSiFor == "MATERIA PRIMA ENSAMBLE":
         grupoNum = "600"
         form_grupo.lblMensaje.setText("Codigo generado con exito.")
@@ -87,7 +87,7 @@ def API_Odoo(codigonuevo):
     Material = str(form_odoo.txtMaterial.text())
     Masa = str(form_odoo.txtMasa.text())
     volume = str(form_odoo.txtVolume.text())
-    GrSiFor = form_grupo.ComboBoxGrupo.currentText()
+    GrSiFor = form_grupo.property("selected_group") # Usamos la propiedad que guardamos
     nombre = form_odoo.txtNombreSis.text()
     clases = actualizar_labels_desde_combobox()
     acabado = form_odoo.txtAcabado.text()
@@ -300,7 +300,7 @@ def validar_barcode():
         return True
 
 def abrir_formulario_principal():
-    codigo = generar_codigo_unico(form_grupo) 
+    codigo = generar_codigo_unico(form_grupo)
     valida_cate_grupo()      
     form_odoo.txtCodigo.setText(codigo) 
     form_odoo.txtCodigo.setReadOnly(True)
@@ -308,6 +308,18 @@ def abrir_formulario_principal():
     form_odoo.show()
     form_grupo.close()
     return(codigo)
+
+def on_grupo_button_clicked():
+    """Maneja el clic de cualquiera de los tres botones de grupo."""
+    # Identifica qué botón fue presionado
+    sender = app.sender()
+    group_name = sender.text().split(' (')[0] # Extrae el nombre del grupo del texto del botón
+    
+    # Guardamos el grupo seleccionado en una propiedad dinámica del formulario para usarlo después
+    form_grupo.setProperty("selected_group", group_name)
+    
+    # Llamamos a la función que abre el siguiente formulario
+    abrir_formulario_principal()
 
 def abrir_formulario_grupo():
     form_login.close()
@@ -428,7 +440,7 @@ def on_click(codigonuevo):
 
     API_Autodesk_Inventor_imput(codigonuevo, userlbl) # Pasamos el nombre del diseñador
     form_odoo.lblMensaje_5.setText("Producto cargado correctamente en Autodesk Inventor y ERP Odoo.")    
-    GrSiFor = form_grupo.ComboBoxGrupo.currentText()
+    GrSiFor = form_grupo.property("selected_group") # Usamos la propiedad que guardamos
     if GrSiFor == "MATERIA PRIMA ENSAMBLE":
         form_odoo.lblMens1.setText("Producto creado con éxito.")
         # Podríamos cerrar la app o mostrar un mensaje de éxito final.
@@ -597,7 +609,12 @@ def run_app(inventor_instance):
     form_login.btnMostrarClave.clicked.connect(toggle_password_visibility)
     form_login.btnCerrarApp.clicked.connect(on_clickCerrar)
     
-    form_grupo.btnConfirmar.clicked.connect(abrir_formulario_principal)
+    # --- INICIO DE LA MODIFICACIÓN ---
+    # Conectamos los nuevos botones a la nueva función manejadora
+    form_grupo.btnGrupoMateriaPrimaEnsamble.clicked.connect(on_grupo_button_clicked)
+    form_grupo.btnGrupoPreEnsambles.clicked.connect(on_grupo_button_clicked)
+    form_grupo.btnGrupoMateriaPrimaProcesada.clicked.connect(on_grupo_button_clicked)
+    # --- FIN DE LA MODIFICACIÓN ---
     form_grupo.btnCerrarSesion.clicked.connect(on_click_cerrar_sesion) # <-- NUEVA CONEXIÓN
     
     form_odoo.btn650.clicked.connect(abrir_formulario_650)
@@ -629,4 +646,5 @@ def abrir_formulario_730(product_id):
     # activo actual, que es de donde se leerá la iProperty "Codigo Sizfra".
     # Pasamos el ID del producto recién creado.
     LanzarMaterialBase1.run_material_base(inv, app, product_id)
+    form_grupo.close()
     form_odoo.close() # Cierra el formulario principal
