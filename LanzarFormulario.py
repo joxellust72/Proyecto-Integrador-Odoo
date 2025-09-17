@@ -6,8 +6,9 @@ import os # <--- IMPORTANTE: Añadimos el módulo 'os'
 import json # <-- Añadimos el módulo JSON para manejar la configuración
 import base64 # <-- Añadimos el módulo base64
 from PyQt6.QtGui import QPixmap # <-- Importamos QPixmap para manejar imágenes
+from PyQt6.QtCore import Qt # <-- Importamos Qt para el manejo de filtros
 from PyQt6 import QtWidgets, uic
-from PyQt6.QtWidgets import QApplication, QMainWindow, QComboBox, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QComboBox, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QCompleter
 from PyQt6.uic import loadUi
 
 # --- CONSTRUCCIÓN DE RUTAS ABSOLUTAS ---
@@ -727,13 +728,28 @@ def run_app(inventor_instance):
 
     def correr_progrma_clases():
         form_odoo.ComboBoxDescripcion.clear()
+        # --- INICIO DE LA MODIFICACIÓN ---
         if categorias_3 is not None and len(categorias_3) > 0:
+            # 1. Ordenar la lista de categorías alfabéticamente por el 'x_name'
+            categorias_3.sort(key=lambda cat: cat.get('x_name', ''))
+
             for categoria in categorias_3:
                 descripcion = categoria.get('x_name', '')
                 form_odoo.ComboBoxDescripcion.addItem(descripcion)
+
+            # 2. Configurar el autocompletado con filtro
+            completer = QCompleter(form_odoo.ComboBoxDescripcion.model(), form_odoo.ComboBoxDescripcion)
+            completer.setFilterMode(Qt.MatchFlag.MatchContains) # Filtra por contenido
+            completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive) # No distingue mayúsculas/minúsculas
+            form_odoo.ComboBoxDescripcion.setCompleter(completer)
+
             form_odoo.ComboBoxDescripcion.currentIndexChanged.connect(actualizar_labels_desde_combobox)
+        # --- FIN DE LA MODIFICACIÓN ---
 
     categorias_3 = obtener_descripciones_categorias_3()
+    # Ordenamos la lista principal de diccionarios para que el índice coincida con la lista ordenada del ComboBox
+    if categorias_3:
+        categorias_3.sort(key=lambda cat: cat.get('x_name', ''))
     correr_progrma_clases()
 
     # --- Conexiones de los formularios ---

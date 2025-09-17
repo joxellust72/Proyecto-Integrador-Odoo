@@ -97,8 +97,14 @@
      <height>31</height>
     </rect>
    </property>
+   <property name="editable">
+    <bool>true</bool>
+   </property>
+   <property name="insertPolicy">
+    <enum>QComboBox::NoInsert</enum>
+   </property>
    <property name="placeholderText" stdset="0">
-    <string>Selecciona una descripción de tu producto</string>
+    <string>Escribe para buscar una clase...</string>
    </property>
    <item>
     <property name="text">
@@ -135,7 +141,7 @@
      <x>400</x>
      <y>170</y>
      <width>141</width>
-     <height>81</height>
+     <height>91</height>
     </rect>
    </property>
    <property name="acceptDrops">
@@ -979,6 +985,12 @@ QGroupBox::title {
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
         <widget class="QPushButton" name="btnValidar_integrado">
+         <property name="styleSheet">
+          <string notr="true">QPushButton{
+background-color: rgb(113, 99, 158);
+color: rgb(255, 255, 255);
+border-radius:8px}</string>
+         </property>
          <property name="text">
           <string>Validar Cantidad</string>
          </property>
@@ -986,6 +998,12 @@ QGroupBox::title {
        </item>
        <item>
         <widget class="QPushButton" name="btnCargar_integrado">
+         <property name="styleSheet">
+          <string notr="true">QPushButton{
+background-color: rgb(113, 99, 158);
+color: rgb(255, 255, 255);
+border-radius:8px}</string>
+         </property>
          <property name="text">
           <string>Cargar Material Base</string>
          </property>
@@ -1016,8 +1034,10 @@ QGroupBox::title {
 }
 
 QPushButton:enabled {
-	background-color: rgb(0, 123, 255);
-}</string>
+	background-color: rgba(113, 99, 158, 0.93);
+}
+
+</string>
    </property>
    <property name="text">
     <string>Añadir Material Base (Nuevo Producto)</string>
@@ -1025,7 +1045,6 @@ QPushButton:enabled {
   </widget>
   <zorder>groupBox_MaterialBase</zorder>
   <zorder>btnMostrarMaterialBase</zorder>
-  <zorder>layoutWidget</zorder>
   <zorder>ComboBoxGrupo</zorder>
   <zorder>label_10</zorder>
   <zorder>label_12</zorder>
