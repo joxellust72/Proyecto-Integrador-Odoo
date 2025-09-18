@@ -1,10 +1,12 @@
 import win32com.client as wc
 import sys
 import os
-from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMessageBox, QDialog
 from PyQt6.uic import loadUi
 import xmlrpc.client # Libreria API Oddo
 from PyQt6 import QtWidgets, uic
+# --- INICIO DE LA MODIFICACIÓN: Importar el servicio de unidades ---
+from LanzarFormulario import UnitService
 
 # --- Variables Globales que se inicializarán en run_lista_materiales ---
 inv = None
@@ -14,6 +16,7 @@ models = None
 uid = None
 odoo_db = None
 odoo_pass = None
+unit_service = None # <-- NUEVA VARIABLE GLOBAL para el servicio de unidades
 # Salir de la aplicación al cerrar todos los formularios
 
 # Conexión a Odoo
@@ -288,8 +291,12 @@ def metodo_de_recursividad_Lineas_LdM(elemento : wc.CDispatch, bom_id : str):
         codigo_sizfra = objeto.ComponentDefinitions(1).Document.PropertySets
         product = models.execute_kw(odoo_db, uid, odoo_pass, 'product.product', 'search',[[('barcode', '=', codigo_sizfra(3).Item('part number').value)]], {'limit': 1})[0]
 
+        # --- INICIO DE LA SOLUCIÓN DE UNIDADES (Componentes estándar) ---
+        # Para componentes estándar (cantidad 'Each'), no se necesita conversión.
         cantidad = objeto.ItemQuantity
-        models.execute_kw(odoo_db, uid, odoo_pass, 'mrp.bom.line', 'create', [[{'bom_id': bom_id, 'product_id' : product, 'product_qty' : cantidad}]])
+        vals = [{'bom_id': bom_id, 'product_id' : product, 'product_qty' : cantidad}]
+        models.execute_kw(odoo_db, uid, odoo_pass, 'mrp.bom.line', 'create', [vals])
+        # --- FIN ---
 
         if objeto.ChildRows != None:
             
@@ -320,17 +327,26 @@ def metodo_de_recursividad_Lineas_LdM(elemento : wc.CDispatch, bom_id : str):
                 
                 case 4: #Longitud
                     #Si el producto 700 tiene una unidad de medida de longitud
-                    cantidad = objeto.ComponentDefinitions(1).BOMQuantity.UnitQuantity.split(" ")[0]
+                    cantidad_str = objeto.ComponentDefinitions(1).BOMQuantity.UnitQuantity.split(" ")[0]
 
                     # Reemplazar la coma por un punto para obtener un formato numérico válido
-                    cantidad = cantidad.replace(',', '.')
+                    cantidad_str = cantidad_str.replace(',', '.')
                     # Convertir la cadena a float
-                    cantidad = float(cantidad)
+                    cantidad = float(cantidad_str)
 
                     #---- Unidad de medida ----
                     product_uom_id = UdM[objeto.ComponentDefinitions(1).BOMQuantity.BaseUnits]
 
-            models.execute_kw(odoo_db, uid, odoo_pass, 'mrp.bom.line', 'create', [[{'bom_id': bom, 'product_id' : product, 'product_qty' : cantidad, 'product_uom_id': product_uom_id}]])
+            # --- INICIO DE LA SOLUCIÓN UNIVERSAL ---
+            # 1. Usamos el UnitService para convertir la cantidad a la unidad de referencia de Odoo.
+            unidad_inventor_str = objeto.ComponentDefinitions(1).BOMQuantity.BaseUnits
+            cantidad_convertida = unit_service.convert_to_reference_unit(cantidad, unidad_inventor_str)
+            print(f"INFO (LdM): Conversión universal: {cantidad} {unidad_inventor_str} -> {cantidad_convertida} (unidad base de Odoo)")
+
+            # 2. Creamos la línea de BoM con la cantidad convertida, pero especificando la unidad original.
+            vals = [{'bom_id': bom, 'product_id' : product, 'product_qty' : cantidad_convertida, 'product_uom_id': product_uom_id}]
+            models.execute_kw(odoo_db, uid, odoo_pass, 'mrp.bom.line', 'create', [vals])
+            # --- FIN DE LA SOLUCIÓN UNIVERSAL ---
 
 
 def principal():
@@ -364,15 +380,24 @@ def on_clickCerrar_LM():
 
 def run_lista_materiales(inventor_instance, q_application):
     """Función principal para lanzar este formulario."""
-    global inv, app, formLM, models, uid, odoo_db, odoo_pass
+    global inv, app, formLM, models, uid, odoo_db, odoo_pass, unit_service
 
     inv = inventor_instance
     app = q_application
 
     try:
+        # --- INICIO DE LA MODIFICACIÓN: Conexión y servicio de unidades ---
+        odoo_connection = {
+            "url": odoo_url, "db": odoo_db, "user": odoo_user, "pass": odoo_pass,
+            "uid": None, "models": None
+        }
         common = xmlrpc.client.ServerProxy(f'{odoo_url}/xmlrpc/2/common')
         uid = common.authenticate(odoo_db, odoo_user, odoo_pass, {})
         models = xmlrpc.client.ServerProxy(f'{odoo_url}/xmlrpc/2/object')
+        odoo_connection['uid'] = uid
+        odoo_connection['models'] = models
+        unit_service = UnitService(odoo_connection) # Inicializamos el servicio
+        # --- FIN DE LA MODIFICACIÓN ---
     except Exception as e:
         QMessageBox.critical(None, "Error de Odoo", f"No se pudo conectar a Odoo: {e}")
         return

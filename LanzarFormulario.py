@@ -102,7 +102,12 @@ def obtener_id_material_base_integrado():
     CodigoMaterialBase = str(form_odoo.txtMaterialBase_integrado.text()).strip()
     if not odoo_connection['models']: return None
     search_domain = ['|', ['default_code', '=', CodigoMaterialBase], ['barcode', '=', CodigoMaterialBase]]
+    
+    # --- INICIO DE LA CORRECCIÓN ---
+    # La siguiente línea faltaba. Realiza la búsqueda en Odoo y guarda el resultado.
     search_result = odoo_connection['models'].execute_kw(odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'], 'product.product', 'search', [search_domain], {'limit': 1})
+    # --- FIN DE LA CORRECCIÓN ---
+
     return search_result[0] if search_result else None
 
 def obtener_unidad_material_base_integrado():
@@ -125,21 +130,75 @@ def obtener_cantidad_material_base_integrado():
         ValueOdoo = float(mass)
         form_odoo.txtCantReq_integrado.setText(str(mass_in_kg_str))
         form_odoo.txtCantReq_integrado.setReadOnly(True)
-        return ValueOdoo
+        return ValueOdoo, "kg"
     else:
         ValueOdooForm = inv.ActiveDocument.ComponentDefinition.BOMQuantity.UnitQuantity
         if ValueOdooForm == "" or "Mock" in inv.__class__.__name__:
             ValueOdoo = 1
             form_odoo.txtCantReq_integrado.setText(str("1 Uni"))
             form_odoo.txtCantReq_integrado.setReadOnly(True)
+            return 1, "Uni"
         else:
-            ValueOdoo = float(ValueOdooForm.split(" ")[0])
+            parts = ValueOdooForm.split(" ")
+            ValueOdoo = float(parts[0].replace(',', '.'))
+            unit_str = parts[1] if len(parts) > 1 else "Uni"
             form_odoo.txtCantReq_integrado.setText(str(ValueOdooForm))
             form_odoo.txtCantReq_integrado.setReadOnly(True)
-        return ValueOdoo if ValueOdoo else 1
+        return ValueOdoo, unit_str
 
 def on_click_validar_integrado():
     obtener_cantidad_material_base_integrado()
+
+class UnitService:
+    """
+    Clase para manejar la lógica de conversión de unidades de medida (UoM)
+    adaptándose a la configuración de Odoo.
+    """
+    def __init__(self, odoo_conn):
+        self.conn = odoo_conn
+        self.uom_map = {}  # Almacena {uom_name: {'category_id': id, 'factor': factor, 'category_name': name}}
+        self._build_uom_map()
+
+    def _build_uom_map(self):
+        """Construye un mapa de todas las unidades de medida y sus factores de conversión."""
+        if not self.conn or not self.conn.get('models'):
+            print("ERROR (UnitService): No hay conexión a Odoo para construir el mapa de unidades.")
+            return
+
+        try:
+            # Leemos todas las unidades y sus categorías
+            uoms = self.conn['models'].execute_kw(
+                self.conn['db'], self.conn['uid'], self.conn['pass'],
+                'uom.uom', 'search_read', [[]],
+                {'fields': ['name', 'category_id', 'uom_type', 'factor']}
+            )
+            for uom in uoms:
+                # Odoo devuelve el nombre de la unidad con espacios a veces. Lo limpiamos.
+                uom_name_clean = uom['name'].lower().strip()
+                self.uom_map[uom_name_clean] = {
+                    'category_id': uom['category_id'][0],
+                    'category_name': uom['category_id'][1],
+                    'uom_type': uom['uom_type'],
+                    # 'factor' es el multiplicador para convertir DESDE la unidad de referencia A esta unidad.
+                    # Ejemplo: 1m (ref) -> factor para 'cm' es 100 -> 100cm.
+                    # Para convertir DESDE esta unidad A la de referencia, la fórmula es:
+                    # Si es 'bigger': cantidad * factor
+                    # Si es 'smaller': cantidad / factor
+                    'factor': uom['factor']
+                }
+            print("INFO (UnitService): Mapa de unidades construido exitosamente.")
+        except Exception as e:
+            print(f"ERROR (UnitService): Fallo al construir el mapa de unidades: {e}")
+
+    def convert_to_reference_unit(self, cantidad, unidad_str):
+        """Convierte una cantidad a la unidad de referencia de su categoría en Odoo."""
+        unidad_info = self.uom_map.get(unidad_str.lower().strip())
+        if unidad_info and unidad_info.get('factor', 0) > 0:
+            if unidad_info['uom_type'] == 'bigger':
+                return cantidad * unidad_info['factor']
+            elif unidad_info['uom_type'] == 'smaller':
+                return cantidad / unidad_info['factor']
+        return cantidad # Si la unidad es la base, más grande, o no se encuentra, no se convierte.
 
 def create_bom_for_product_integrado(product_id):
     material_base_ids_prod = obtener_id_material_base_integrado()
@@ -163,11 +222,23 @@ def create_bom_for_product_integrado(product_id):
     uom_id_result = odoo_connection['models'].execute_kw(odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'], 'uom.uom', 'search', [[('name', '=', uom_name)]])
     uom_id = uom_id_result[0] if uom_id_result else 1
 
-    ValueOdoo = obtener_cantidad_material_base_integrado()
-    vals = [{'bom_id': listacreada, 'product_id': material_base_ids_prod, 'product_qty': ValueOdoo, 'product_uom_id': uom_id}]
-    listacargada = odoo_connection['models'].execute_kw(odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'], 'mrp.bom.line', 'create', [vals])
+    cantidad_inventor, unidad_inventor_str = obtener_cantidad_material_base_integrado()
+    
+    # --- INICIO DE LA SOLUCIÓN UNIVERSAL ---
+    # 1. Usamos el UnitService para convertir la cantidad a la unidad de referencia de Odoo.
+    cantidad_convertida = unit_service.convert_to_reference_unit(cantidad_inventor, unidad_inventor_str)
+    print(f"INFO: Conversión universal: {cantidad_inventor} {unidad_inventor_str} -> {cantidad_convertida} (unidad base de Odoo)")
 
-    form_odoo.lblMensaje_3.setText(f"Lista de materiales actualizada con éxito. Línea ID: {listacargada}")
+    # 2. Creamos la línea de BoM con la cantidad convertida, pero especificando la unidad original.
+    vals = [{'bom_id': listacreada, 'product_id': material_base_ids_prod, 'product_qty': cantidad_convertida, 'product_uom_id': uom_id}]
+    
+    bom_line_id_creada = odoo_connection['models'].execute_kw(odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'], 'mrp.bom.line', 'create', [vals])
+    
+    if not bom_line_id_creada:
+        QMessageBox.critical(form_odoo, "Error", "No se pudo crear la línea de la lista de materiales en Odoo.")
+        return
+    
+    form_odoo.lblMensaje_3.setText(f"Lista de materiales actualizada con éxito. Línea ID: {bom_line_id_creada[0]}")
     form_odoo.btnCargar_integrado.setStyleSheet("background-color: blue; color: white;")
     form_odoo.btnCargar_integrado.setEnabled(False)
 
@@ -688,7 +759,7 @@ def show_material_base_section():
 
 
 def run_app(inventor_instance):
-    global inv, invApp, invDoc, app, form_login, form_grupo, form_odoo, form, formLM, odoo_connection, categorias_3
+    global inv, invApp, invDoc, app, form_login, form_grupo, form_odoo, form, formLM, odoo_connection, categorias_3, unit_service
 
     inv = inventor_instance
     invApp = inventor_instance
@@ -719,6 +790,9 @@ def run_app(inventor_instance):
     common = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/common')
     odoo_connection['uid'] = common.authenticate(odoo_connection['db'], odoo_connection['user'], odoo_connection['pass'], {})
     odoo_connection['models'] = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/object')
+
+    # --- INICIO DE LA SOLUCIÓN UNIVERSAL: Inicializamos el servicio de unidades ---
+    unit_service = UnitService(odoo_connection)
 
     def obtener_descripciones_categorias_3():
         if not odoo_connection or not odoo_connection.get('models'): return []
