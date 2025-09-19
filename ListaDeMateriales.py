@@ -17,6 +17,7 @@ uid = None
 odoo_db = None
 odoo_pass = None
 unit_service = None # <-- NUEVA VARIABLE GLOBAL para el servicio de unidades
+product_template_id = None # <-- NUEVA VARIABLE GLOBAL para el ID del producto padre
 # Salir de la aplicación al cerrar todos los formularios
 
 # Conexión a Odoo
@@ -378,12 +379,13 @@ def on_clickCerrar_LM():
     if app:
         app.quit()
 
-def run_lista_materiales(inventor_instance, q_application):
+def run_lista_materiales(inventor_instance, q_application, product_id):
     """Función principal para lanzar este formulario."""
-    global inv, app, formLM, models, uid, odoo_db, odoo_pass, unit_service
+    global inv, app, formLM, models, uid, odoo_db, odoo_pass, unit_service, product_template_id
 
     inv = inventor_instance
     app = q_application
+    product_template_id = product_id # Guardamos el ID del producto padre
 
     try:
         # --- INICIO DE LA MODIFICACIÓN: Conexión y servicio de unidades ---

@@ -6,7 +6,7 @@ import os # <--- IMPORTANTE: Añadimos el módulo 'os'
 import json # <-- Añadimos el módulo JSON para manejar la configuración
 import base64 # <-- Añadimos el módulo base64
 from PyQt6.QtGui import QPixmap # <-- Importamos QPixmap para manejar imágenes
-from PyQt6.QtCore import Qt # <-- Importamos Qt para el manejo de filtros
+from PyQt6.QtCore import Qt, QTimer # <-- Importamos Qt y QTimer
 from PyQt6 import QtWidgets, uic
 from PyQt6.QtWidgets import QApplication, QMainWindow, QComboBox, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QCompleter
 from PyQt6.uic import loadUi
@@ -24,6 +24,7 @@ FORM_LISTA_MATERIALES_UI = os.path.join(BASE_DIR, "FormularioListaMateriales.ui"
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json") # <-- Ruta para nuestro archivo de sesión
 # --- FIN DE LA CONSTRUCCIÓN DE RUTAS ---
 from ui_utils import show_error_message
+from Notification import Notification # <-- IMPORTAMOS LA NUEVA CLASE
 
 
 def validar_docActivo_inventor():   
@@ -242,6 +243,22 @@ def create_bom_for_product_integrado(product_id):
     form_odoo.btnCargar_integrado.setStyleSheet("background-color: blue; color: white;")
     form_odoo.btnCargar_integrado.setEnabled(False)
 
+    # --- INICIO DE LA SOLUCIÓN MEJORADA: Notificación integrada ---
+    # 1. Creamos la notificación como un widget hijo del formulario principal.
+    notification = Notification(
+        title="Éxito",
+        message="El material base se ha asignado correctamente a la pieza.",
+        parent=form_odoo
+    )
+    # 2. La centramos en la ventana padre.
+    notification.move(
+        (form_odoo.width() - notification.width()) // 2,
+        (form_odoo.height() - notification.height()) // 2
+    )
+    notification.show()
+    # 3. Programamos el cierre de TODA la aplicación después de 2 segundos.
+    QTimer.singleShot(2000, on_clickCerrar)
+
 #endregion
 
 def valida_cate_grupo():
@@ -334,6 +351,7 @@ def API_Odoo(codigonuevo):
         'name': nombre,
         'barcode': codigonuevo,
         'image_1920': imagen(), # Llamamos a la función aquí para generar y mostrar la imagen
+        'image_1920': imagen_b64, # Usamos la variable que ya contiene la imagen
         'detailed_type' : 'product',
         'list_price' : 0,
         'taxes_id' : [],
@@ -589,6 +607,29 @@ def on_click_validar():
         form_odoo.textPalabraClave.setText(palabclave)
         form_odoo.textPalabraClave.setReadOnly(True)  # Establecer el cuadro de texto como solo lectura
         form_odoo.lblMensaje_5.setText("Codigo creado con exito")#, generar_codigo_unico(form_grupo))
+
+        # --- INICIO DE LA SOLUCIÓN: Mostrar previsualización de imagen ---
+        try:
+            # 1. Definimos la ruta donde se guardará la imagen temporalmente
+            # Usamos BASE_DIR para que sea una ruta confiable.
+            image_path = os.path.join(BASE_DIR, "LibImaOddo", "temp_preview.png")
+
+            # 2. Generamos la captura desde Inventor (real o mock)
+            camera = inv.ActiveView.Camera
+            camera.ViewOrientationType = 10761 # Vista isométrica
+            camera.ApplyWithoutTransition()
+            inv.ActiveDocument.SaveAs(image_path, True) # Guardamos como imagen
+
+            # 3. Cargamos la imagen en un QPixmap y la mostramos en el QLabel
+            pixmap = QPixmap(image_path)
+            form_odoo.lblImagen.setPixmap(pixmap)
+            print(f"INFO: Previsualización de imagen '{image_path}' cargada en el formulario.")
+
+        except Exception as e:
+            print(f"ADVERTENCIA: No se pudo generar o mostrar la previsualización de la imagen. Error: {e}")
+            # Opcional: Cargar una imagen por defecto si falla
+            # form_odoo.lblImagen.setPixmap(QPixmap(os.path.join(BASE_DIR, "LibImaOddo", "error_icon.png")))
+        # --- FIN DE LA SOLUCIÓN ---
                  
 def obtener_id_product():
     barcodeProducto = str(form_odoo.txtCodigo.text())       
@@ -620,6 +661,13 @@ def on_click(codigonuevo):
         userlbl = usuario_logueado
     # --- FIN DE LA CORRECCIÓN ---
     new_product_id = API_Odoo(codigonuevo) # Capturamos el ID del nuevo producto
+
+    # --- INICIO DE LA SOLUCIÓN: Procesar eventos de la UI ---
+    # Forzamos a la aplicación a procesar cualquier evento pendiente en la cola,
+    # como la actualización de labels o el cambio de color de botones.
+    # Esto es crucial antes de mostrar una nueva ventana como la notificación.
+    app.processEvents()
+    # --- FIN DE LA SOLUCIÓN ---
 
     if not new_product_id:
         form_odoo.lblMensaje_5.setText("Fallo al crear el producto en Odoo. No se puede continuar.")

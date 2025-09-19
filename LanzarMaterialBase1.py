@@ -4,6 +4,7 @@ import os
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.uic import loadUi
 import xmlrpc.client
+from Notification import Notification # <-- IMPORTAMOS LA NUEVA CLASE
 
 
 # --- Variables Globales ---
@@ -234,6 +235,22 @@ def create_bom_for_product():
     API_Autodesk_Inventor_imput()
     form.lblMensaje.setText(f"Lista cargada con exito con ID: {listacargada}")
     form.btnConfiMateBase.setStyleSheet("background-color: blue; color: white;")
+    form.btnConfiMateBase.setEnabled(False) # Deshabilitar para evitar reenvíos
+
+    # --- INICIO DE LA SOLUCIÓN: Mostrar notificación y cerrar ---
+    # Ocultamos el formulario principal para que el usuario solo vea la notificación.
+    form.hide()
+    # Forzamos a la UI a procesar el evento de ocultar la ventana.
+    app.processEvents()
+
+    notification = Notification(
+        title="Éxito",
+        message="El material base se ha asignado correctamente a la pieza."
+    )
+    # Mostramos la notificación. El script se pausará aquí hasta que se cierre.
+    notification.show_and_exec()
+    # Una vez que la notificación se cierra, cerramos la aplicación.
+    on_clickCerrar()
 
 def arranque_codigo():
     global form

@@ -216,9 +216,6 @@ color: rgb(255, 255, 255);
    <property name="text">
     <string/>
    </property>
-   <property name="pixmap">
-    <pixmap>../LibImaOddo/Imagen.png</pixmap>
-   </property>
    <property name="scaledContents">
     <bool>true</bool>
    </property>
@@ -985,11 +982,18 @@ QGroupBox::title {
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
         <widget class="QPushButton" name="btnValidar_integrado">
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
          <property name="styleSheet">
-          <string notr="true">QPushButton{
+          <string notr="true">QPushButton {
 background-color: rgb(113, 99, 158);
 color: rgb(255, 255, 255);
-border-radius:8px}</string>
+border-radius:8px
+}
+QPushButton:hover {
+	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
+}</string>
          </property>
          <property name="text">
           <string>Validar Cantidad</string>
@@ -998,11 +1002,18 @@ border-radius:8px}</string>
        </item>
        <item>
         <widget class="QPushButton" name="btnCargar_integrado">
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
          <property name="styleSheet">
-          <string notr="true">QPushButton{
+          <string notr="true">QPushButton {
 background-color: rgb(113, 99, 158);
 color: rgb(255, 255, 255);
-border-radius:8px}</string>
+border-radius:8px
+}
+QPushButton:hover {
+	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
+}</string>
          </property>
          <property name="text">
           <string>Cargar Material Base</string>
@@ -1017,6 +1028,9 @@ border-radius:8px}</string>
   <widget class="QPushButton" name="btnMostrarMaterialBase">
    <property name="enabled">
     <bool>false</bool>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="geometry">
     <rect>
@@ -1035,6 +1049,10 @@ border-radius:8px}</string>
 
 QPushButton:enabled {
 	background-color: rgba(113, 99, 158, 0.93);
+}
+
+QPushButton:hover:enabled {
+	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
 }
 
 </string>
