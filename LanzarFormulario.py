@@ -4,8 +4,8 @@ import xmlrpc.client  # Libreria API Odoo
 import sys
 import os # <--- IMPORTANTE: Añadimos el módulo 'os'
 import json # <-- Añadimos el módulo JSON para manejar la configuración
-import base64 # <-- Añadimos el módulo base64
-from PyQt6.QtGui import QPixmap # <-- Importamos QPixmap para manejar imágenes
+import base64 
+from PyQt6.QtGui import QPixmap, QIcon # <-- Importamos QPixmap y QIcon
 from PyQt6.QtCore import Qt, QTimer # <-- Importamos Qt y QTimer
 from PyQt6 import QtWidgets, uic
 from PyQt6.QtWidgets import QApplication, QMainWindow, QComboBox, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QCompleter
@@ -688,12 +688,14 @@ def on_click(codigonuevo):
         form_odoo.btnEnviar.setEnabled(False)
         form_odoo.btnEnviar.setStyleSheet("background-color: gray; color: white")
         # Guardamos el ID del producto en el botón para usarlo después
-        form_odoo.btn650.setProperty("product_id", new_product_id)
+        form_odoo.btn650.setProperty("product_id", new_product_id) # Guardamos el ID para el botón 650
     elif GrSiFor == "MATERIA PRIMA PROCESADA":
         form_odoo.btnMostrarMaterialBase.setEnabled(True)
+        form_odoo.btn730.setEnabled(True) # Habilitamos también el botón de icono 730
         form_odoo.btnEnviar.setEnabled(False)
         form_odoo.btnEnviar.setStyleSheet("background-color: gray; color: white")
         form_odoo.btnMostrarMaterialBase.setProperty("product_id", new_product_id)
+        form_odoo.btn730.setProperty("product_id", new_product_id) # Y le pasamos el ID también
     else:
         form_odoo.lblMens1.setText("Selecciona un grupo para continuar.")
 
@@ -798,13 +800,73 @@ def on_click_cerrar_sesion():
     form_grupo.close()
     form_login.show()
 
-def show_material_base_section():
-    """Hace visible la sección de material base y intenta cargar los datos."""
+def show_material_base_section(product_id=None):
+    """Hace visible la sección de material base y la prepara con el ID del producto."""
     form_odoo.groupBox_MaterialBase.setVisible(True)
-    # Obtenemos el ID del producto que se guardó en una propiedad del botón
-    product_id = form_odoo.btnMostrarMaterialBase.property("product_id")
-    get_material_base_from_inventor_integrado(product_id)
+    
+    # Si no se pasa un ID explícito, lo tomamos del botón de "Nuevo Producto".
+    if product_id is None:
+        product_id = form_odoo.btnMostrarMaterialBase.property("product_id")
+    
+    if product_id:
+        # Guardamos el ID en el botón de carga para que la lógica de 'create_bom' funcione.
+        form_odoo.btnCargar_integrado.setProperty("product_id", product_id)
+        get_material_base_from_inventor_integrado(product_id)
 
+def on_click_730():
+    """
+    Manejador para el botón 730.
+    1. Verifica si la pieza activa en Inventor ya existe en Odoo.
+    2. Si existe, muestra la sección de material base y la prepara.
+    3. Si no, muestra un error.
+    """
+    print("INFO: Botón 730 presionado. Verificando pieza en Odoo...")
+    try:
+        # 1. Obtener el Part Number de la pieza activa en Inventor
+        part_number = inv.ActiveDocument.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
+        if not part_number:
+            QMessageBox.warning(form_odoo, "Pieza no Válida", "La pieza activa en Inventor no tiene un 'Part Number' (código) definido.")
+            return
+
+        # 2. Buscar el producto en Odoo
+        product_ids = odoo_connection['models'].execute_kw(odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'], 'product.template', 'search', [[['barcode', '=', part_number]]], {'limit': 1})
+
+        if not product_ids:
+            QMessageBox.critical(form_odoo, "Pieza no Encontrada", f"La pieza con código '{part_number}' no se encontró en Odoo. Primero debe crearla y guardarla.")
+            return
+
+        # 3. Si se encuentra, mostrar la sección y cargar datos
+        print(f"INFO: Pieza '{part_number}' encontrada con ID {product_ids[0]}. Mostrando sección de material base.")
+        # Pasamos el ID del producto encontrado a la función que muestra la sección.
+        show_material_base_section(product_id=product_ids[0])
+    except Exception as e:
+        show_error_message("Error en Botón 730", f"Ocurrió un error al procesar la acción del botón 730.", detailed_text=str(e))
+
+def check_active_part_in_odoo():
+    """
+    Verifica si la pieza activa en Inventor existe en Odoo.
+    Habilita o deshabilita el botón 'btn730' en consecuencia.
+    """
+    try:
+        part_number = inv.ActiveDocument.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
+        if not part_number:
+            form_odoo.btn730.setEnabled(False)
+            return
+
+        product_ids = odoo_connection['models'].execute_kw(
+            odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'],
+            'product.template', 'search', [[['barcode', '=', part_number]]], {'limit': 1}
+        )
+
+        if product_ids:
+            print(f"INFO: La pieza activa '{part_number}' existe en Odoo. Botón 730 HABILITADO.")
+            form_odoo.btn730.setEnabled(True)
+        else:
+            print(f"INFO: La pieza activa '{part_number}' NO existe en Odoo. Botón 730 DESHABILITADO.")
+            form_odoo.btn730.setEnabled(False)
+    except Exception as e:
+        print(f"ADVERTENCIA: No se pudo verificar la pieza en Odoo. Botón 730 deshabilitado. Error: {e}")
+        form_odoo.btn730.setEnabled(False)
 
 def run_app(inventor_instance):
     global inv, invApp, invDoc, app, form_login, form_grupo, form_odoo, form, formLM, odoo_connection, categorias_3, unit_service
@@ -817,6 +879,22 @@ def run_app(inventor_instance):
     # Cargar todos los formularios
     form_login = uic.loadUi(FORM_LOGIN_UI)
     form_grupo = uic.loadUi(FORM_GRUPO_UI)
+
+    # --- INICIO DE LA MEJORA DE ESTILO DE TOOLTIPS ---
+    # Aplicamos un estilo personalizado a todos los tooltips de la aplicación.
+    # Esto les dará un fondo oscuro, texto blanco y bordes redondeados.
+    app.setStyleSheet("""
+QToolTip {
+    color: #71639e; /* Color de texto blanco */
+    background-color: #2a2a2a; /* Fondo oscuro, un poco más oscuro */
+    border: 1px solid #71639e; /* Borde con el color principal de la app */
+    border-radius: 4px; /* Bordes ligeramente menos redondeados */
+    padding: 5px; /* Espaciado interno */
+    opacity: 230; /* Ligeramente traslúcido, pero no transparente */
+}
+""")
+    # --- FIN DE LA MEJORA DE ESTILO DE TOOLTIPS ---
+
     form_odoo = uic.loadUi(FORM_ODOO_UI)
     form_odoo.lblMensaje_5.setText("Autodesk Inventor tiene un documento activo.")
     form_odoo.ComboBoxDescripcion.clear()
@@ -890,22 +968,45 @@ def run_app(inventor_instance):
     # --- INICIO DE LA MODIFICACIÓN DE INTEGRACIÓN ---
     # El botón 730 mantiene su funcionalidad original de abrir una ventana separada
     form_odoo.btn650.clicked.connect(abrir_formulario_650)
-    form_odoo.btn730.clicked.connect(abrir_formulario_730)
+    form_odoo.btn730.clicked.connect(on_click_730) # <-- CORRECCIÓN: Conectado a la nueva lógica
     # El nuevo botón para mostrar la sección integrada
     form_odoo.btnMostrarMaterialBase.clicked.connect(show_material_base_section)
     # Conexiones para los botones dentro de la sección integrada
     form_odoo.btnValidar_integrado.clicked.connect(on_click_validar_integrado)
     # Usamos una lambda para pasar el ID del producto al crear la BoM
     form_odoo.btnCargar_integrado.clicked.connect(
-        lambda: create_bom_for_product_integrado(form_odoo.btnMostrarMaterialBase.property("product_id"))
+        lambda: create_bom_for_product_integrado(form_odoo.btnCargar_integrado.property("product_id"))
     )
     # --- FIN DE LA MODIFICACIÓN DE INTEGRACIÓN ---
 
     form_odoo.btnCerrarPrin.clicked.connect(on_clickCerrar)
+    # --- INICIO DE LA MEJORA DE ALINEACIÓN DE BOTONES ---
+    # 1. Botón 600 (Recargar): Le ponemos el icono y la función.
+    reload_icon = form_odoo.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_BrowserReload)
+    form_odoo.findChild(QPushButton, "600").setIcon(QIcon(reload_icon))
+    form_odoo.findChild(QPushButton, "600").setText("") # Quitamos el texto para que solo se vea el icono
+    form_odoo.findChild(QPushButton, "600").setFixedSize(40, 40) # Hacemos el botón cuadrado
+    form_odoo.findChild(QPushButton, "600").clicked.connect(abrir_formulario_grupo)
+
+    # 2. Botón 650 (Lista de Materiales): Le ponemos un icono de lista.
+    bom_icon = form_odoo.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_FileDialogDetailedView)
+    form_odoo.btn650.setText("650")
+    form_odoo.btn650.setFixedSize(40, 40)
+
+    # 3. Botón 730 (Material Base): Le ponemos un icono de "abrir".
+    open_icon = form_odoo.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
+    form_odoo.btn730.setText("") # Le quitamos el texto para que sea solo un icono
+    form_odoo.btn730.setIcon(QIcon(open_icon))
+    form_odoo.btn730.setFixedSize(40, 40)
+    # --- FIN DE LA MEJORA DE ALINEACIÓN DE BOTONES ---
+
     form_odoo.btnEnviar.clicked.connect(lambda: on_click(form_odoo.txtCodigo.text()))
     form_odoo.btnValidar.clicked.connect(on_click_validar)
     form_odoo.btnAbrirFormularioGrupo.clicked.connect(abrir_formulario_grupo)
     
+    # --- LÓGICA DE HABILITACIÓN DINÁMICA ---
+    check_active_part_in_odoo()
+
     # Inicia mostrando el formulario de LOGIN
     form_login.show()
     load_session_config() # Intentar autologin

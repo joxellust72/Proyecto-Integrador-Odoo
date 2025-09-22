@@ -49,19 +49,6 @@
   <property name="styleSheet">
    <string notr="true">background-color: rgb(255, 255, 255);</string>
   </property>
-  <widget class="QComboBox" name="ComboBoxGrupo">
-   <property name="geometry">
-    <rect>
-     <x>880</x>
-     <y>340</y>
-     <width>188</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="placeholderText" stdset="0">
-    <string/>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_10">
    <property name="geometry">
     <rect>
@@ -96,6 +83,9 @@
      <width>251</width>
      <height>31</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>Selecciona la clasificación principal del producto. Esto cargará automáticamente las Clases 1 y 2.</string>
    </property>
    <property name="editable">
     <bool>true</bool>
@@ -207,8 +197,8 @@ color: rgb(255, 255, 255);
   <widget class="QLabel" name="lblImagen">
    <property name="geometry">
     <rect>
-     <x>790</x>
-     <y>110</y>
+     <x>890</x>
+     <y>330</y>
      <width>151</width>
      <height>111</height>
     </rect>
@@ -223,8 +213,8 @@ color: rgb(255, 255, 255);
   <widget class="QLabel" name="label_27">
    <property name="geometry">
     <rect>
-     <x>760</x>
-     <y>60</y>
+     <x>870</x>
+     <y>260</y>
      <width>211</width>
      <height>41</height>
     </rect>
@@ -471,8 +461,7 @@ color: rgb(255, 255, 255);
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_2">
-    <item>
-     <widget class="QPushButton" name="btnValidar">
+    <item><widget class="QPushButton" name="btnValidar">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -482,6 +471,9 @@ color: rgb(255, 255, 255);
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
+      </property>
+      <property name="toolTip">
+       <string>Extrae las propiedades (iProperties) del archivo activo en Inventor y rellena los campos del formulario.</string>
       </property>
       <property name="styleSheet">
        <string notr="true">QPushButton{
@@ -511,6 +503,9 @@ QPushButton:hover{
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
       </property>
+      <property name="toolTip">
+       <string>Vuelve a la pantalla de selección de grupo para registrar una pieza nueva.</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">QPushButton{
 background-color: rgb(113, 99, 158);
@@ -539,6 +534,9 @@ QPushButton:hover{
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
       </property>
+      <property name="toolTip">
+       <string>Envía los datos de este formulario para crear un nuevo producto en Odoo y actualiza el archivo de Inventor.</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">QPushButton{
 background-color: rgb(113, 99, 158);
@@ -566,6 +564,9 @@ QPushButton:hover{
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
+      </property>
+      <property name="toolTip">
+       <string>Cierra la aplicación.</string>
       </property>
       <property name="styleSheet">
        <string notr="true">QPushButton{
@@ -800,7 +801,7 @@ QPushButton:hover{
   <widget class="QLabel" name="label_14">
    <property name="geometry">
     <rect>
-     <x>560</x>
+     <x>660</x>
      <y>60</y>
      <width>171</width>
      <height>31</height>
@@ -813,27 +814,30 @@ QPushButton:hover{
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>570</x>
+     <x>660</x>
      <y>100</y>
-     <width>153</width>
-     <height>151</height>
+     <width>151</width>
+     <height>131</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_8">
-    <item>
-     <widget class="QPushButton" name="600">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton{
+     <item>
+      <widget class="QPushButton" name="600">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
+       <property name="toolTip">
+        <string>Vuelve a la pantalla de selección de grupo para registrar una pieza nueva.</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
 background-color: rgb(113, 99, 158);
 color: rgb(255, 255, 255);
 border-radius:8px}
@@ -841,29 +845,30 @@ border-radius:8px}
 QPushButton:hover{	
 	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
 }
-
-
 </string>
-      </property>
-      <property name="text">
-       <string>GENERAR CODIGO</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="btn650">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton{
+       </property>
+       <property name="text">
+        <string>GENERAR CODIGO</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn650">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
+       <property name="toolTip">
+        <string>Carga la Lista de Materiales (BoM) de este ensamblaje a Odoo. Se activa solo para productos tipo Pre-Ensamble (650).</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
 background-color: rgb(113, 99, 158);
 color: rgb(255, 255, 255);
 border-radius:8px}
@@ -871,29 +876,33 @@ border-radius:8px}
 QPushButton:hover{	
 	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
 }
-
-
 </string>
-      </property>
-      <property name="text">
-       <string>650</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="btn730">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton{
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn730">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
+       <property name="toolTip">
+        <string>Asigna un Material Base a una pieza ya existente en Odoo. Abre una ventana nueva para completar el proceso.</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
 background-color: rgb(113, 99, 158);
 color: rgb(255, 255, 255);
 border-radius:8px}
@@ -901,16 +910,14 @@ border-radius:8px}
 QPushButton:hover{	
 	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
 }
-
-
 </string>
-      </property>
-      <property name="text">
-       <string>730</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
   </widget>
   <widget class="QGroupBox" name="groupBox_MaterialBase">
    <property name="geometry">
@@ -1029,9 +1036,6 @@ QPushButton:hover {
    <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="cursor">
-    <cursorShape>PointingHandCursor</cursorShape>
-   </property>
    <property name="geometry">
     <rect>
      <x>50</x>
@@ -1039,6 +1043,12 @@ QPushButton:hover {
      <width>221</width>
      <height>31</height>
     </rect>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <property name="toolTip">
+    <string>Muestra la sección para asignar el material base a este nuevo producto. Se activa solo para productos tipo Materia Prima Procesada (730).</string>
    </property>
    <property name="styleSheet">
     <string notr="true">QPushButton {
@@ -1063,7 +1073,6 @@ QPushButton:hover:enabled {
   </widget>
   <zorder>groupBox_MaterialBase</zorder>
   <zorder>btnMostrarMaterialBase</zorder>
-  <zorder>ComboBoxGrupo</zorder>
   <zorder>label_10</zorder>
   <zorder>label_12</zorder>
   <zorder>ComboBoxDescripcion</zorder>
@@ -1089,8 +1098,6 @@ QPushButton:hover:enabled {
   <zorder>titleBarLabel</zorder>
   <zorder>layoutWidget</zorder>
  </widget>
- <resources>
-  <include location="../LibImaOddo/logosOdooAutomate.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
