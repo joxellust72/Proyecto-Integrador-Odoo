@@ -994,10 +994,9 @@ QToolTip {
     form_odoo.btn650.setFixedSize(40, 40)
 
     # 3. Botón 730 (Material Base): Le ponemos un icono de "abrir".
-    open_icon = form_odoo.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
-    form_odoo.btn730.setText("") # Le quitamos el texto para que sea solo un icono
-    form_odoo.btn730.setIcon(QIcon(open_icon))
-    form_odoo.btn730.setFixedSize(40, 40)
+    form_odoo.btn730.setText("730") # Nos aseguramos de que el texto sea "730"
+    form_odoo.btn730.setIcon(QIcon()) # Eliminamos cualquier icono que pueda tener
+    form_odoo.btn730.setFixedSize(40, 40) # Ajustamos el tamaño para que se vea bien el texto
     # --- FIN DE LA MEJORA DE ALINEACIÓN DE BOTONES ---
 
     form_odoo.btnEnviar.clicked.connect(lambda: on_click(form_odoo.txtCodigo.text()))
