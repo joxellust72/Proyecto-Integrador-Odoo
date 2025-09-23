@@ -37,9 +37,6 @@
   <property name="windowTitle">
    <string>FORMULARIO DE CONFIRMACIÓN DE GRUPO</string>
   </property>
-  <property name="toolTip">
-   <string/>
-  </property>
   <property name="accessibleName">
    <string/>
   </property>
@@ -212,6 +209,9 @@ color: rgb(255, 255, 255);
         <bold>true</bold>
        </font>
       </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Confirmar y Subir BoM&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Analiza el ensamble activo en Inventor y sube su estructura de componentes (Lista de Materiales) a Odoo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
       </property>
@@ -238,6 +238,9 @@ QPushButton:hover{
         <pointsize>12</pointsize>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Posponer Carga&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Cierra la aplicación. Podrás subir la lista de materiales más adelante.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>

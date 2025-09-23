@@ -22,7 +22,7 @@ product_template_id = None # <-- NUEVA VARIABLE GLOBAL para el ID del producto p
 
 # Conexión a Odoo
 odoo_url = 'http://192.168.10.13:8069'
-odoo_db = 'PruebaCFReA'
+odoo_db = 'Pruebas_automate'
 odoo_user = 'it@automate-corp.com'
 odoo_pass = 'Auto1234-'
 

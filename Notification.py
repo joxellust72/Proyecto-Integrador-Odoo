@@ -12,7 +12,7 @@ class Notification(QDialog):
     Una ventana de diálogo personalizada para mostrar notificaciones de éxito.
     Se cierra automáticamente después de un tiempo determinado.
     """
-    def __init__(self, title, message, duration=2000, parent=None):
+    def __init__(self, title, message, duration=3200, parent=None):
         """
         Inicializa la notificación.
 

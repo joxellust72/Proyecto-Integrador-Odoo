@@ -37,9 +37,6 @@
   <property name="windowTitle">
    <string>FORMULARIO DE CONFIRMACIÓN DE GRUPO</string>
   </property>
-  <property name="toolTip">
-   <string/>
-  </property>
   <property name="accessibleName">
    <string/>
   </property>
@@ -231,6 +228,9 @@ color: rgb(255, 255, 255);
         <bold>true</bold>
        </font>
       </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Crear Materia Prima de Ensamble (600)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Inicia el proceso para registrar un nuevo producto que se compra y se usa en ensambles, como tornillería, perfiles, etc.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
      <property name="cursor">
       <cursorShape>PointingHandCursor</cursorShape>
      </property>
@@ -257,6 +257,9 @@ QPushButton:hover{
         <bold>true</bold>
        </font>
       </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Crear un Pre-Ensamble (650)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Inicia el proceso para registrar un nuevo sub-ensamble, que a su vez está compuesto por otras piezas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
       </property>
@@ -282,6 +285,9 @@ QPushButton:hover{
         <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Crear Materia Prima Procesada (730)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Inicia el proceso para registrar una nueva pieza que se fabrica a partir de un material base (ej. una plancha de acero).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
@@ -317,6 +323,9 @@ QPushButton:hover{
      <weight>75</weight>
      <bold>true</bold>
     </font>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Cerrar Sesión Actual&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Finaliza la sesión del usuario y regresa a la pantalla de inicio de sesión.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="cursor">
     <cursorShape>PointingHandCursor</cursorShape>

@@ -201,7 +201,17 @@ class UnitService:
                 return cantidad / unidad_info['factor']
         return cantidad # Si la unidad es la base, más grande, o no se encuentra, no se convierte.
 
-def create_bom_for_product_integrado(product_id):
+def create_bom_for_product_integrado():
+    """Crea o actualiza la BoM para un producto usando el material base del formulario."""
+    print(f"DEBUG: create_bom_for_product_integrado called.")
+    # --- MODIFICACIÓN: Obtenemos el ID directamente del formulario principal ---
+    product_id = form_odoo.property("current_parent_product_id")
+    print(f"DEBUG: create_bom_for_product_integrado - product_id from form_odoo: {product_id}, type: {type(product_id)}")
+
+    if not product_id:
+        QMessageBox.critical(form_odoo, "Error Crítico", "No se ha podido identificar el producto padre para crear la BoM.")
+        return
+    # --- FIN DE LA SOLUCIÓN ---
     material_base_ids_prod = obtener_id_material_base_integrado()
     if not material_base_ids_prod:
         QMessageBox.critical(form_odoo, "Error", "No se pudo encontrar el material base en Odoo. Verifique el código.")
@@ -211,7 +221,7 @@ def create_bom_for_product_integrado(product_id):
     if bom_ids:
         listacreada = bom_ids[0]
     else:
-        vals = [{'product_tmpl_id': product_id, 'product_qty': 1}]
+        vals = [{'product_tmpl_id': product_id, 'product_qty': 1, 'consumption': 'flexible'}]
         new_bom_id = odoo_connection['models'].execute_kw(odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'], 'mrp.bom', 'create', [vals])
         listacreada = new_bom_id[0] if new_bom_id else None
 
@@ -514,6 +524,8 @@ def abrir_formulario_principal():
     form_odoo.txtCodigo.setText(codigo) 
     form_odoo.txtCodigo.setReadOnly(True)
     form_odoo.lblMens1.setText("Aplicativo listo para conectar con Autodesk Inventor, ERP Odoo, Sistema información Sizfra, ")
+    # --- INICIO DE LA SOLUCIÓN: Deshabilitar botones de flujo secundario al inicio ---
+    # El botón 730 ahora estará habilitado por defecto, pero los otros flujos no.
     form_odoo.show()
     form_grupo.close()
     return(codigo)
@@ -600,6 +612,11 @@ def on_click_validar():
         # form_odoo.lblMensaje_6.setText(userlbl) # <-- Eliminamos esta línea porque el widget ya no existe
         form_odoo.txtCategoria.setText(categoria_inventor)
         form_odoo.txtCategoria.setReadOnly(True)
+
+        # --- INICIO DE LA MODIFICACIÓN: Se elimina la lógica de búsqueda de 'on_click_validar' ---
+        # Esta función ahora solo rellena los campos del formulario para el flujo de creación de nueva pieza.
+        # La lógica de búsqueda se ha movido a 'on_click_btn730'.
+
         form_odoo.lblMens1.setText("Bienvenido,"+ userlbl)
         form_odoo.btnValidar.setStyleSheet("background-color: blue; color: white;")
         form_odoo.txtVolume.setText(str(round(volume/1,2)))
@@ -694,6 +711,7 @@ def on_click(codigonuevo):
         form_odoo.btnEnviar.setEnabled(False)
         form_odoo.btnEnviar.setStyleSheet("background-color: gray; color: white")
         form_odoo.btnMostrarMaterialBase.setProperty("product_id", new_product_id)
+        form_odoo.setProperty("current_parent_product_id", new_product_id) # Guardamos en la propiedad central
     else:
         form_odoo.lblMens1.setText("Selecciona un grupo para continuar.")
 
@@ -801,9 +819,43 @@ def on_click_cerrar_sesion():
 def show_material_base_section():
     """Hace visible la sección de material base y intenta cargar los datos."""
     form_odoo.groupBox_MaterialBase.setVisible(True)
-    # Obtenemos el ID del producto que se guardó en una propiedad del botón
-    product_id = form_odoo.btnMostrarMaterialBase.property("product_id")
+    # --- MODIFICACIÓN: Obtenemos el ID del botón que fue presionado ---
+    sender_button = app.sender()
+    product_id = sender_button.property("product_id")
+    # Guardamos el ID en el botón de carga para que la lambda funcione correctamente
+    form_odoo.btnCargar_integrado.setProperty("product_id", product_id)
     get_material_base_from_inventor_integrado(product_id)
+
+def on_click_btn730():
+    """
+    Punto de entrada para el flujo de 'añadir material base a pieza existente'.
+    """
+    print("INFO: Botón 730 presionado. Iniciando flujo para pieza existente.")
+    try:
+        # 1. Leer el Part Number del documento activo en Inventor.
+        part_number = inv.ActiveDocument.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
+        if not part_number:
+            QMessageBox.warning(form_odoo, "Pieza no registrada", "La pieza activa en Inventor no tiene un 'Part Number'.\n\nPor favor, utilice el flujo de creación de nuevo producto o asegúrese de que la pieza ya esté registrada.")
+            return
+
+        # 2. Buscar ese Part Number en Odoo.
+        product_ids = odoo_connection['models'].execute_kw(
+            odoo_connection['db'], odoo_connection['uid'], odoo_connection['pass'],
+            'product.template', 'search', [[['barcode', '=', part_number]]], {'limit': 1}
+        )
+        if not product_ids:
+            QMessageBox.critical(form_odoo, "Error de Búsqueda", f"La pieza con Part Number '{part_number}' no se encontró en Odoo.")
+            return
+
+        # 3. Si se encuentra, guardar el ID y mostrar la sección.
+        product_id = product_ids[0]
+        form_odoo.setProperty("current_parent_product_id", product_id)
+        print(f"INFO: Pieza existente encontrada (ID: {product_id}). Mostrando sección de material base.")
+        show_material_base_section()
+    except Exception as e:
+        show_error_message("Error en Flujo 730", f"Ocurrió un error al procesar la pieza existente: {e}")
+
+
 
 
 def run_app(inventor_instance):
@@ -814,6 +866,22 @@ def run_app(inventor_instance):
     invDoc = invApp.ActiveDocument
 
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+
+    # --- INICIO DE LA SOLUCIÓN: Estilo global para ToolTips ---
+    # Aplicamos un estilo CSS a toda la aplicación para que los tooltips se vean más bonitos.
+    # Esto define un borde redondeado, un color de fondo y un padding.
+    app.setStyleSheet("""
+        QToolTip {
+            color: #
+            71639e;
+            background-color: #2a2a2a;
+            border: 1px solid #71639e;
+            border-radius: 4px;
+            padding: 5px;
+        }
+    """)
+    # --- FIN DE LA SOLUCIÓN ---
+
     # Cargar todos los formularios
     form_login = uic.loadUi(FORM_LOGIN_UI)
     form_grupo = uic.loadUi(FORM_GRUPO_UI)
@@ -823,7 +891,7 @@ def run_app(inventor_instance):
 
     odoo_connection = {
         "url": 'http://192.168.10.13:8069',
-        "db": 'PruebaCFReA',
+        "db": 'Pruebas_automate',
         "user": 'it@automate-corp.com', # Usuario admin para operaciones
         "pass": 'Auto1234-',
         "uid": None,
@@ -833,6 +901,11 @@ def run_app(inventor_instance):
     # Ocultar la sección de material base al inicio
     form_odoo.groupBox_MaterialBase.setVisible(False)
 
+    # --- INICIO DE LA SOLUCIÓN: Deshabilitar botones de flujo al inicio ---
+    # Deshabilitamos los botones que inician flujos secundarios para forzar la validación primero.
+    form_odoo.btn650.setEnabled(False) # Se habilita al crear un pre-ensamble
+    form_odoo.btn730.setEnabled(True)  # Habilitado por defecto para el flujo de pieza existente
+    # --- FIN DE LA SOLUCIÓN ---
     # La conexión inicial se moverá al login para manejar errores allí.
     # Aquí solo preparamos el diccionario.
     common = xmlrpc.client.ServerProxy(f'{odoo_connection["url"]}/xmlrpc/2/common')
@@ -888,17 +961,15 @@ def run_app(inventor_instance):
     form_grupo.btnCerrarSesion.clicked.connect(on_click_cerrar_sesion) # <-- NUEVA CONEXIÓN
     
     # --- INICIO DE LA MODIFICACIÓN DE INTEGRACIÓN ---
-    # El botón 730 mantiene su funcionalidad original de abrir una ventana separada
     form_odoo.btn650.clicked.connect(abrir_formulario_650)
-    form_odoo.btn730.clicked.connect(abrir_formulario_730)
-    # El nuevo botón para mostrar la sección integrada
+    # El botón 730 ahora es el punto de entrada para piezas existentes.
+    form_odoo.btn730.clicked.connect(on_click_btn730)
+    # El botón para mostrar la sección integrada después de crear un nuevo producto 730.
     form_odoo.btnMostrarMaterialBase.clicked.connect(show_material_base_section)
     # Conexiones para los botones dentro de la sección integrada
     form_odoo.btnValidar_integrado.clicked.connect(on_click_validar_integrado)
     # Usamos una lambda para pasar el ID del producto al crear la BoM
-    form_odoo.btnCargar_integrado.clicked.connect(
-        lambda: create_bom_for_product_integrado(form_odoo.btnMostrarMaterialBase.property("product_id"))
-    )
+    form_odoo.btnCargar_integrado.clicked.connect(create_bom_for_product_integrado)
     # --- FIN DE LA MODIFICACIÓN DE INTEGRACIÓN ---
 
     form_odoo.btnCerrarPrin.clicked.connect(on_clickCerrar)
@@ -922,13 +993,9 @@ def abrir_formulario_650():
     
 
 def abrir_formulario_730(product_id=None):
-    # Esta función ahora solo se usa para el botón 730 original (casos de piezas ya existentes)
-    # Pasa la instancia 'inv' y la app existente al otro módulo
-    import LanzarMaterialBase1
-    # --- CORRECCIÓN MODO REAL ---
-    # No creamos un nuevo documento. El flujo debe continuar con el documento
-    # activo actual, que es de donde se leerá la iProperty "Codigo Sizfra".
-    # Pasamos el ID del producto recién creado.
-    # Si product_id es None, significa que venimos del botón 730 y debemos buscar el ID.
-    LanzarMaterialBase1.run_material_base(inv, app, product_id if product_id else obtener_id_product())
-    form_odoo.close() # Cierra el formulario principal
+    """
+    FUNCIÓN OBSOLETA.
+    Esta función ya no se utiliza, ya que la lógica se ha integrado en el formulario principal.
+    Se mantiene por si se necesita revertir, pero puede ser eliminada.
+    """
+    print("ADVERTENCIA: Se ha llamado a la función obsoleta 'abrir_formulario_730'.")

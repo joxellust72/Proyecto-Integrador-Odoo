@@ -37,9 +37,6 @@
   <property name="windowTitle">
    <string>FORMULARIO DE GENERACIÓN DE CODIGOS PARA INGRESAR PRODUCTOS AL SISTEMA</string>
   </property>
-  <property name="toolTip">
-   <string/>
-  </property>
   <property name="accessibleName">
    <string/>
   </property>
@@ -49,19 +46,6 @@
   <property name="styleSheet">
    <string notr="true">background-color: rgb(255, 255, 255);</string>
   </property>
-  <widget class="QComboBox" name="ComboBoxGrupo">
-   <property name="geometry">
-    <rect>
-     <x>880</x>
-     <y>340</y>
-     <width>188</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="placeholderText" stdset="0">
-    <string/>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_10">
    <property name="geometry">
     <rect>
@@ -480,6 +464,9 @@ color: rgb(255, 255, 255);
         <bold>true</bold>
        </font>
       </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Validar Datos desde Inventor&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Lee las propiedades (iProperties) del documento activo en Autodesk Inventor y rellena los campos del formulario.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
       </property>
@@ -500,34 +487,6 @@ QPushButton:hover{
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="btnAbrirFormularioGrupo">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton{
-background-color: rgb(113, 99, 158);
-color: rgb(255, 255, 255);
-border-radius:8px}
-
-QPushButton:hover{	
-	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
-}
-</string>
-      </property>
-      <property name="text">
-       <string>GENERAR CODIGO</string>
-      </property>
-     </widget>
-    </item>
-    <item>
      <widget class="QPushButton" name="btnEnviar">
       <property name="font">
        <font>
@@ -535,6 +494,9 @@ QPushButton:hover{
         <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Enviar Registro a Odoo e Inventor&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Crea el producto en Odoo con los datos del formulario y actualiza las propiedades del archivo en Inventor con el nuevo código.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
@@ -563,6 +525,9 @@ QPushButton:hover{
         <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Cerrar la Aplicación&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Finaliza y cierra el programa por completo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
@@ -813,21 +778,24 @@ QPushButton:hover{
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>570</x>
+     <x>602</x>
      <y>100</y>
-     <width>153</width>
+     <width>81</width>
      <height>151</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_8">
     <item>
-     <widget class="QPushButton" name="600">
+     <widget class="QPushButton" name="btnAbrirFormularioGrupo">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
         <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Regresar a Selección de Grupo&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Vuelve a la pantalla anterior para seleccionar un tipo de producto diferente.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
@@ -841,12 +809,10 @@ border-radius:8px}
 QPushButton:hover{	
 	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 rgba(35, 40, 3, 255), stop:0.16 rgba(136, 106, 22, 255), stop:0.225 rgba(166, 140, 41, 255), stop:0.285 rgba(204, 181, 74, 255), stop:0.345 rgba(235, 219, 102, 255), stop:0.415 rgba(245, 236, 112, 255), stop:0.52 rgba(209, 190, 76, 255), stop:0.57 rgba(187, 156, 51, 255), stop:0.635 rgba(168, 142, 42, 255), stop:0.695 rgba(202, 174, 68, 255), stop:0.75 rgba(218, 202, 86, 255), stop:0.815 rgba(208, 187, 73, 255), stop:0.88 rgba(187, 156, 51, 255), stop:0.935 rgba(137, 108, 26, 255), stop:1 rgba(35, 40, 3, 255));
 }
-
-
 </string>
       </property>
       <property name="text">
-       <string>GENERAR CODIGO</string>
+       <string>BACK</string>
       </property>
      </widget>
     </item>
@@ -858,6 +824,9 @@ QPushButton:hover{
         <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Gestionar Lista de Materiales (BoM)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Abre el formulario para subir la lista de componentes de este ensamble a Odoo. &lt;br/&gt;&lt;i&gt;(Se habilita tras crear un Pre-Ensamble 650)&lt;/i&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
@@ -888,6 +857,9 @@ QPushButton:hover{
         <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Asignar Material Base (Pieza Existente)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Asigna un material base a una pieza que ya existe en Odoo.&lt;br/&gt;&lt;i&gt;(Se habilita después de presionar 'VALIDAR' si la pieza se encuentra en el sistema).&lt;/i&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="cursor">
        <cursorShape>PointingHandCursor</cursorShape>
@@ -982,6 +954,9 @@ QGroupBox::title {
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
         <widget class="QPushButton" name="btnValidar_integrado">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Calcular Cantidad Requerida&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Calcula la cantidad de material base necesaria (ej. masa o unidades) a partir de las propiedades de la pieza en Inventor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
@@ -1002,6 +977,9 @@ QPushButton:hover {
        </item>
        <item>
         <widget class="QPushButton" name="btnCargar_integrado">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Confirmar y Cargar Material Base&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Crea la Lista de Materiales (BoM) en Odoo, vinculando esta pieza con su material base.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
@@ -1029,9 +1007,6 @@ QPushButton:hover {
    <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="cursor">
-    <cursorShape>PointingHandCursor</cursorShape>
-   </property>
    <property name="geometry">
     <rect>
      <x>50</x>
@@ -1039,6 +1014,12 @@ QPushButton:hover {
      <width>221</width>
      <height>31</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Añadir Material Base a la Pieza Creada&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Muestra la sección para asignar el material en bruto del cual se fabricará esta pieza.&lt;br/&gt;&lt;i&gt;(Se habilita tras crear una Materia Prima Procesada 730)&lt;/i&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="styleSheet">
     <string notr="true">QPushButton {
@@ -1063,7 +1044,6 @@ QPushButton:hover:enabled {
   </widget>
   <zorder>groupBox_MaterialBase</zorder>
   <zorder>btnMostrarMaterialBase</zorder>
-  <zorder>ComboBoxGrupo</zorder>
   <zorder>label_10</zorder>
   <zorder>label_12</zorder>
   <zorder>ComboBoxDescripcion</zorder>
@@ -1089,8 +1069,6 @@ QPushButton:hover:enabled {
   <zorder>titleBarLabel</zorder>
   <zorder>layoutWidget</zorder>
  </widget>
- <resources>
-  <include location="../LibImaOddo/logosOdooAutomate.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

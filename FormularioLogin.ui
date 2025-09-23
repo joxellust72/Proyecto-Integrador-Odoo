@@ -201,6 +201,9 @@ Odoo - Inventor</string>
     </item>
     <item row="1" column="2">
      <widget class="QPushButton" name="btnMostrarClave">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Mostrar/Ocultar Contraseña&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Permite visualizar la contraseña que estás escribiendo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="text">
        <string>Ver</string>
       </property>
@@ -243,6 +246,9 @@ Odoo - Inventor</string>
         <bold>true</bold>
        </font>
       </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Iniciar Sesión en Odoo&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Valida tus credenciales con el sistema ERP Odoo para acceder a la aplicación.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(113, 99, 158); color: white; border-radius: 5px; padding: 5px;</string>
       </property>
@@ -259,6 +265,9 @@ Odoo - Inventor</string>
         <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Cerrar la Aplicación&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Finaliza y cierra el programa por completo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(170, 0, 0); color: white; border-radius: 5px; padding: 5px;</string>
