@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FormularioLogin</class>
+ <widget class="QDialog" name="FormularioLogin">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>500</width>
+    <height>300</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>500</width>
+    <height>300</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Inicio de Sesión - Integrador Odoo</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgb(255, 255, 255);</string>
+  </property>
+  <widget class="QPushButton" name="pushButton_2">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>501</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb(113, 99, 158);
+color: rgb(255, 255, 255);
+</string>
+   </property>
+   <property name="text">
+    <string>INICIO DE SESIÓN</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>40</y>
+     <width>111</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../LibImaOddo/LogoAutomateBlanco.jpg</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>50</y>
+     <width>211</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Bienvenido al Integrador
+Odoo - Inventor</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>130</y>
+     <width>381</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_4">
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;E-MAIL:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QComboBox" name="ComboBoxEmail">
+      <property name="placeholderText">
+       <string>Selecciona tu correo eléctronico</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>admin@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>it@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>ingenieria@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+      <property name="text">
+        <string>ingenieria1@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>ingenieria2@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>ingenieria3@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>ingenieria5@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>ingenieria6@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+      <property name="text">
+        <string>ingenieria7@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+      <property name="text">
+        <string>ingenieria8@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+      <property name="text">
+        <string>electricos1@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+      <property name="text">
+        <string>electricos2@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+      <property name="text">
+        <string>automatizacion@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>automatizacion2@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>sistemas@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>procesos@automate-corp.com</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>operaciones@automate-corp.com</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_5">
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;CLAVE:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="txtClave">
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
+      </property>
+      <property name="placeholderText">
+       <string>Ingresa tu contraseña</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QPushButton" name="btnMostrarClave">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Mostrar/Ocultar Contraseña&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Permite visualizar la contraseña que estás escribiendo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="text">
+       <string>Ver</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QLabel" name="lblMensaje">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>280</y>
+     <width>501</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#71639e;&quot;&gt;Por favor, inicie sesión para continuar.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>220</y>
+     <width>381</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QPushButton" name="btnIniciarSesion">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Iniciar Sesión en Odoo&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Valida tus credenciales con el sistema ERP Odoo para acceder a la aplicación.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(113, 99, 158); color: white; border-radius: 5px; padding: 5px;</string>
+      </property>
+      <property name="text">
+       <string>Iniciar Sesión</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnCerrarApp">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Cerrar la Aplicación&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Finaliza y cierra el programa por completo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 0, 0); color: white; border-radius: 5px; padding: 5px;</string>
+      </property>
+      <property name="text">
+       <string>Cerrar</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
