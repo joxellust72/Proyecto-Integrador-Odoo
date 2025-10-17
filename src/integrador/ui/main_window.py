@@ -200,66 +200,102 @@ class MainApplication:
         uom_data = self.odoo_api.execute_kw('uom.uom', 'read', [uom_id[0]], {'fields': ['name']})
         return uom_data[0]['name']
 
-    def get_base_material_quantity(self):
+    def get_parent_product_uom_info(self):
+        """
+        Obtiene la información completa de la UoM del producto padre (el que se está creando/editando).
+        Este es el producto 730 en sí mismo.
+        """
+        parent_product_id = self.main_window.property("current_parent_product_id")
+        if not parent_product_id or not self.odoo_api:
+            return None
+
+        product_data = self.odoo_api.execute_kw('product.product', 'read', [parent_product_id], {'fields': ['uom_name']})
+        if not product_data:
+            return None
+
+        uom_name = product_data[0].get('uom_name')
+        return self.unit_service.get_uom_info(uom_name) if uom_name else None
+
+    def get_base_material_quantity(self, required_category=None):
         """
         Determina la cantidad requerida del material base desde Inventor.
+        Implementa una lógica de lectura dirigida por la categoría requerida.
 
-        Si la unidad de medida en Odoo es 'kg', calcula la masa.
-        De lo contrario, intenta obtener la cantidad de la BoM de Inventor.
-
-        Returns:
-            tuple: Una tupla conteniendo (float: cantidad, str: unidad).
+        Args:
+            required_category (str, optional): La categoría de unidad requerida ('weight', 'length / distance').
+                                               Si es None, usa la lógica de prioridad estándar.
         """
-        if not self.inv: return 0, ""
-        uom_data1 = self.get_base_material_uom()
-        uom_info_odoo = self.unit_service.get_uom_info(uom_data1)
+        qty_found = False
+        self._current_base_material_qty = 0.0
+        self._current_base_material_unit = ""
 
-        if not uom_info_odoo:
-            QMessageBox.critical(self.main_window, "Error de Unidad", f"La unidad de medida '{uom_data1}' del material base en Odoo no es válida o no se encontró.")
-            return
+        if not self.inv:
+            return False
 
-        uom_category_id = uom_info_odoo['category_id']
+        # Si se requiere longitud o no se especifica categoría, intentar leer BOMQuantity primero.
+        if required_category in ['length / distance', None]:
+            try:
+                bom_quantity_str = self.inventor_api.doc.ComponentDefinition.BOMQuantity.UnitQuantity
+                if bom_quantity_str and "cada una" not in bom_quantity_str.lower():
+                    # Manejar el caso donde no hay espacio, ej: "10mm"
+                    value_str = ''.join(filter(lambda x: x.isdigit() or x in ',.', bom_quantity_str))
+                    unit_str = ''.join(filter(str.isalpha, bom_quantity_str))
+                    
+                    if value_str and unit_str:
+                        value = float(value_str.replace(',', '.'))
+                        if value > 0:
+                            self._current_base_material_qty = value
+                            self._current_base_material_unit = unit_str.strip()
+                            self.main_window.txtCantReq_integrado.setText(f"{value} {self._current_base_material_unit}")
+                            qty_found = True
+                            print(f"INFO: Cantidad obtenida de BOMQuantity (Prioridad 1): {self._current_base_material_qty} {self._current_base_material_unit}")
+            except Exception as e:
+                print(f"ADVERTENCIA: No se pudo leer BOMQuantity.UnitQuantity. Error: {e}. Se intentará con Masa si aplica.")
 
-        # Categoría 2: Peso (Weight)
-        if uom_category_id == 2:
-            # La propiedad 'Mass' de Inventor viene en GRAMOS.
+        # Si no se encontró cantidad (o si se requiere peso explícitamente), leer Masa.
+        if not qty_found or required_category == 'weight':
             mass_in_grams = self.inventor_api._get_property("Design Tracking Properties", "Mass", 0.0)
-            self._current_base_material_qty = mass_in_grams
-            self._current_base_material_unit = "g" # Siempre leemos en gramos para máxima precisión
-            
-            # Convertimos a la unidad de Odoo para mostrar en la UI
-            display_qty = self.unit_service.convert(mass_in_grams, "g", uom_data1)
-            self.main_window.txtCantReq_integrado.setText(f"{display_qty:.4f} {uom_data1}")
-            self.main_window.txtCantReq_integrado.setReadOnly(True)
+            # Si se requería peso y la masa es 0, es un error. Si no, solo es un fallback.
+            if mass_in_grams > 0:
+                # La API de Inventor devuelve la masa en gramos.
+                # Si es una cantidad grande, la mostramos y manejamos en kg para consistencia.
+                if mass_in_grams >= 1000:
+                    mass_in_kg = mass_in_grams / 1000.0
+                    self._current_base_material_qty = mass_in_kg
+                    self._current_base_material_unit = "kg"
+                    self.main_window.txtCantReq_integrado.setText(f"{mass_in_kg:.4f} kg")
+                else:
+                    self._current_base_material_qty = mass_in_grams
+                    self._current_base_material_unit = "g"
+                    self.main_window.txtCantReq_integrado.setText(f"{mass_in_grams:.4f} g")
+                qty_found = True
+                # Si se requería peso, forzamos la unidad de origen a ser de peso, ignorando lo que se haya leído antes.
+                if required_category == 'weight':
+                    print(f"INFO: Cantidad obtenida de Mass (Requerimiento de Peso): {self._current_base_material_qty:.4f} {self._current_base_material_unit}")
+                else:
+                    print(f"INFO: Cantidad obtenida de Mass (Prioridad 2): {self._current_base_material_qty:.4f} {self._current_base_material_unit}")
 
-        # Categoría 1: Unidad (Unit) o cualquier otra categoría no manejada explícitamente
-        # También entra aquí si no hay `UnitQuantity`
-        elif uom_category_id == 1 or not self.inventor_api.doc.ComponentDefinition.BOMQuantity.UnitQuantity:
-             # Para unidades, asumimos 1 a menos que se especifique lo contrario.
-            ValueOdoo = 1
-            unit_str = uom_data1 if uom_data1 else "Uni"
-            self.main_window.txtCantReq_integrado.setText(f"1 {unit_str}")
-            self.main_window.txtCantReq_integrado.setReadOnly(True)
-            self._current_base_material_qty = 1
-            self._current_base_material_unit = unit_str
-
-        # Otras categorías (como Longitud) que usan BOMQuantity
-        else:
-            ValueOdooForm = self.inventor_api.doc.ComponentDefinition.BOMQuantity.UnitQuantity
-            parts = ValueOdooForm.split(" ", 1)
-            ValueOdoo = float(parts[0].replace(',', '.')) if parts else 0.0
-            unit_str = parts[1] if len(parts) > 1 else uom_data1
-            self._current_base_material_qty = ValueOdoo
-            self._current_base_material_unit = unit_str
-            self.main_window.txtCantReq_integrado.setText(ValueOdooForm)
-            self.main_window.txtCantReq_integrado.setReadOnly(True)
+        # Si después de todo, no se encontró nada, mostrar error.
+        if not qty_found:
+            self.main_window.txtCantReq_integrado.setText("")
+            QMessageBox.critical(
+                self.main_window, 
+                "Cantidad no encontrada", 
+                "No se encontró una cantidad válida (Longitud o Masa).\n\n"
+                "Asegúrese de que la propiedad 'BOMQuantity' tenga un valor de longitud (ej. '150 mm') o que las propiedades físicas de la pieza estén actualizadas para calcular la masa."
+            )
+            return False
+        
+        self.main_window.txtCantReq_integrado.setReadOnly(True)
+        return True
 
     def handle_validate_base_material_quantity(self):
         """
         Manejador para el botón 'Validar' en la sección de material base.
         Calcula y almacena la cantidad y unidad del material base.
         """
-        self.get_base_material_quantity()
+        # Al validar manualmente, no sabemos el objetivo, así que usamos la prioridad estándar.
+        self.get_base_material_quantity(required_category=None)
 
     def handle_create_bom_for_product(self):
         """Crea o actualiza la BoM para un producto usando el material base del formulario."""
@@ -281,43 +317,123 @@ class MainApplication:
             QMessageBox.critical(self.main_window, "Error", "No se pudo encontrar el material base en Odoo. Verifique el código.")
             return
 
-        # 1. Buscar o crear la BoM para el producto padre
-        bom_ids = self.odoo_api.execute_kw('mrp.bom', 'search', [[('product_tmpl_id', '=', parent_template_id)]], {'limit': 1})
-        if bom_ids:
-            bom_id = bom_ids[0]
-            # Opcional: podrías querer limpiar las líneas existentes si la BoM se puede regenerar
-            # bom_line_ids = self.odoo_api.execute_kw('mrp.bom.line', 'search', [[['bom_id', '=', bom_id]]])
-            # if bom_line_ids: self.odoo_api.execute_kw('mrp.bom.line', 'unlink', [bom_line_ids])
-        else:
-            vals = [{'product_tmpl_id': parent_template_id, 'product_qty': 1, 'consumption': 'flexible'}]
-            new_bom_id = self.odoo_api.execute_kw('mrp.bom', 'create', [vals])
-            bom_id = new_bom_id[0] if new_bom_id else None
-
+        # 1. Crear siempre una nueva BoM para el producto padre, según el nuevo requisito.
+        # Esto permite tener múltiples versiones de la BoM si es necesario.
+        vals = [{'product_tmpl_id': parent_template_id, 'product_qty': 1, 'consumption': 'flexible'}]
+        new_bom_id = self.odoo_api.execute_kw('mrp.bom', 'create', [vals])
+        bom_id = new_bom_id[0] if new_bom_id else None
         if not bom_id:
             QMessageBox.critical(self.main_window, "Error", "No se pudo crear o encontrar la lista de materiales para el producto padre.")
             return
 
         # 2. Usar la cantidad y unidad ya calculadas y almacenadas
-        if self._current_base_material_qty <= 0:
-            QMessageBox.warning(self.main_window, "Validación Requerida", "Por favor, presione 'Validar Cantidad' antes de cargar el material base.")
-            return
-
-        # Obtenemos la unidad de medida de destino desde Odoo para el material base
+        # Obtenemos la unidad de medida de destino (la del material base) desde Odoo
         uom_name_odoo = self.get_base_material_uom()
         uom_info_odoo = self.unit_service.get_uom_info(uom_name_odoo)
+        uom_info_inventor = self.unit_service.get_uom_info(self._current_base_material_unit.lower())
 
         if not uom_info_odoo:
             QMessageBox.critical(self.main_window, "Error", f"No se pudo encontrar la información de la unidad de medida '{uom_name_odoo}' en Odoo.")
             return
 
-        uom_id = uom_info_odoo['id']
+        # --- INICIO DE LA LÓGICA REFACTORIZADA ---
+        # Ahora, obtenemos la cantidad de Inventor DESPUÉS de saber la categoría de Odoo.
+        cat_name_odoo = uom_info_odoo['category_name'].lower().strip()
+        if not self.get_base_material_quantity(required_category=cat_name_odoo):
+            # La función get_base_material_quantity ya muestra el error si no encuentra nada.
+            return
+
+        # Volvemos a obtener la info de la unidad de Inventor, ya que pudo haber cambiado (de mm a kg).
+        uom_info_inventor = self.unit_service.get_uom_info(self._current_base_material_unit.lower())
+
+        if not uom_info_inventor:
+            QMessageBox.critical(self.main_window, "Error de Unidad", f"La unidad '{self._current_base_material_unit}' leída de Inventor no es una unidad válida en Odoo.\nNo se puede continuar.")
+            return
+
+        # --- INICIO DE LA NUEVA LÓGICA DE 4 CASOS ---
+        cat_name_inventor = uom_info_inventor['category_name'].lower().strip()
+        cantidad_a_subir = 0.0
+        unidad_a_subir_id = uom_info_odoo['id']
+        unidad_a_subir_nombre = uom_name_odoo
+
+        # --- Lógica de Detección de Categoría Robusta ---
+        # Verificamos si las categorías son de peso o longitud, incluso si los nombres no son exactos.
+        is_inventor_weight = 'weight' in cat_name_inventor or self._current_base_material_unit.lower() in ['kg', 'g', 'lb', 'oz']
+        is_odoo_weight = 'weight' in cat_name_odoo or uom_name_odoo.lower() in ['kg', 'g', 'lb', 'oz']
+
+        is_inventor_length = ('length' in cat_name_inventor or 'distance' in cat_name_inventor) or self._current_base_material_unit.lower() in ['m', 'cm', 'mm', 'in']
+        is_odoo_length = ('length' in cat_name_odoo or 'distance' in cat_name_odoo) or uom_name_odoo.lower() in ['m', 'cm', 'mm', 'in']
+
+        # Casos B y D: Las categorías son compatibles (Long->Long, Peso->Peso)
+        if (is_inventor_weight and is_odoo_weight) or (is_inventor_length and is_odoo_length):
+            # Caso D: Inventor (Peso) -> Odoo (Peso)
+            if is_inventor_weight and is_odoo_weight:
+                print(f"DEBUG: Caso D. Inventor (Peso) -> Odoo (Peso). De '{self._current_base_material_unit}' a '{uom_name_odoo}'.")
+                cantidad_a_subir, unidad_a_subir_nombre = self.unit_service.convert_weight_with_optimization(
+                    self._current_base_material_qty, self._current_base_material_unit, uom_name_odoo
+                )
+                if cantidad_a_subir is None:
+                    error_msg = (f"Fallo la conversión de unidades de peso.\n\n"
+                                 f"De: {self._current_base_material_qty} {self._current_base_material_unit}\n"
+                                 f"A: {uom_name_odoo}\n\n"
+                                 "Esto suele ocurrir si las unidades ('g', 'kg') no pertenecen a la misma categoría en Odoo. "
+                                 "Revise la configuración de unidades en el ERP.")
+                    QMessageBox.critical(self.main_window, "Error de Conversión", error_msg)
+                    return
+
+                final_uom_info = self.unit_service.get_uom_info(unidad_a_subir_nombre)
+                unidad_a_subir_id = final_uom_info['id']
+            elif is_inventor_length and is_odoo_length: # Caso B: Inventor (Longitud) -> Odoo (Longitud)
+                print(f"DEBUG: Caso B. Inventor (Longitud) -> Odoo (Longitud). De '{self._current_base_material_unit}' a '{uom_name_odoo}'.")
+                cantidad_a_subir = self.unit_service.convert(self._current_base_material_qty, self._current_base_material_unit, uom_name_odoo)
+            else: # Otro tipo de categoría compatible
+                print(f"DEBUG: Caso compatible genérico. De '{self._current_base_material_unit}' a '{uom_name_odoo}'.")
+                cantidad_a_subir = self.unit_service.convert(self._current_base_material_qty, self._current_base_material_unit, uom_name_odoo)
+
+        # Caso A: Inventor (Longitud) -> Odoo (Peso)
+        elif is_inventor_length and is_odoo_weight:
+            print("DEBUG: Caso A. Inventor (Longitud) -> Odoo (Peso)")
+            mass_in_grams = self.inventor_api._get_property("Design Tracking Properties", "Mass", 0.0)
+            if mass_in_grams <= 0:
+                QMessageBox.critical(self.main_window, "Masa no encontrada", "La conversión requiere la masa de la pieza, pero no se encontró un valor válido (>0).\n\nPor favor, actualice las propiedades físicas en Inventor.")
+                return
+            
+            cantidad_a_subir, unidad_a_subir_nombre = self.unit_service.convert_weight_with_optimization(mass_in_grams, "g", uom_name_odoo)
+            if cantidad_a_subir is None:
+                error_msg = (f"Fallo la conversión de unidades de peso (Caso A).\n\n"
+                             f"De: {mass_in_grams} g\n"
+                             f"A: {uom_name_odoo}\n\n"
+                             "Esto suele ocurrir si las unidades ('g', 'kg') no pertenecen a la misma categoría en Odoo. "
+                             "Revise la configuración de unidades en el ERP.")
+                QMessageBox.critical(self.main_window, "Error de Conversión", error_msg)
+                return
+
+            final_uom_info = self.unit_service.get_uom_info(unidad_a_subir_nombre)
+            unidad_a_subir_id = final_uom_info['id']
+
+        # Caso C: Inventor (Peso) -> Odoo (Longitud) - OPERACIÓN BLOQUEADA
+        elif is_inventor_weight and is_odoo_length:
+            print("DEBUG: Caso C. Inventor (Peso) -> Odoo (Longitud). Bloqueado.")
+            error_msg = ("Error de Lógica: Está intentando consumir un material que se mide por Longitud (ej. 'm') "
+                         "a partir de una pieza cuya cantidad se ha determinado por su Peso (ej. 'kg'). Esta operación no es válida.\n\n"
+                         "Para corregirlo, edite la iProperty 'BOMQuantity' de la pieza en Inventor y asígnele un valor de Longitud (ej. '100 mm').")
+            QMessageBox.critical(self.main_window, "Error de Asignación", error_msg)
+            return
         
-        # Realizamos la conversión precisa desde la unidad de Inventor a la unidad de Odoo
-        cantidad_convertida = self.unit_service.convert(self._current_base_material_qty, self._current_base_material_unit, uom_name_odoo)
-        print(f"INFO: Conversión de '{self._current_base_material_qty} {self._current_base_material_unit}' (Inventor) a '{cantidad_convertida:.6f} {uom_name_odoo}' (Odoo).")
+        # Otros casos no soportados
+        else:
+            error_msg = (f"La combinación de unidades no está soportada.\n\n"
+                         f"- Categoría de Origen (Inventor): '{cat_name_inventor}'\n"
+                         f"- Categoría de Destino (Odoo): '{cat_name_odoo}'\n\n"
+                         "Ninguno de los casos de conversión (A, B, C, D) se pudo aplicar.")
+            QMessageBox.critical(self.main_window, "Error de Compatibilidad", error_msg)
+            return
+
+        print(f"INFO: Cantidad a subir: '{cantidad_a_subir:.6f} {unidad_a_subir_nombre}' (Odoo).")
+        # --- FIN DE LA NUEVA LÓGICA ---
 
         # 3. Crear la línea de la BoM
-        vals = [{'bom_id': bom_id, 'product_id': material_base_ids_prod, 'product_qty': cantidad_convertida, 'product_uom_id': uom_id}]
+        vals = [{'bom_id': bom_id, 'product_id': material_base_ids_prod, 'product_qty': cantidad_a_subir, 'product_uom_id': unidad_a_subir_id}]
         
         bom_line_id_creada = self.odoo_api.execute_kw('mrp.bom.line', 'create', [vals])
         
