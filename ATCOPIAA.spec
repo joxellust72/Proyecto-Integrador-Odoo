@@ -5,7 +5,7 @@ a = Analysis(
     ['src\\integrador\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('resources', 'resources')],
+    datas=[('src/resources', 'resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

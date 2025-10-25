@@ -267,7 +267,8 @@ class BomWindow:
                 self.odoo_api.execute_kw('mrp.bom.line', 'unlink', [bom_line_ids])
         else:
             bom_data = [{'consumption': 'flexible', 'product_tmpl_id': product_tmp_id, 'product_qty': 1}]
-            bom_id = self.odoo_api.execute_kw('mrp.bom', 'create', [bom_data])[0]
+            new_bom_id = self.odoo_api.execute_kw('mrp.bom', 'create', [bom_data])
+            bom_id = new_bom_id[0] if isinstance(new_bom_id, list) else new_bom_id
 
         return bom_id
 

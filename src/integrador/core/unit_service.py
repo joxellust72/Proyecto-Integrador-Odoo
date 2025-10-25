@@ -30,27 +30,83 @@ class UnitService:
         a Odoo en cada operación.
         """
         if not self.odoo_api:
-            print("ERROR [UnitService]: No hay conexión a Odoo para construir el mapa de unidades.")
+            print("ERROR [UnitService]: No hay conexión a Odoo para construir el mapa de unidades. El servicio no funcionará correctamente.")
             return
 
         try:
             # Leemos todas las unidades, sus categorías y factores de conversión.
             uoms = self.odoo_api.execute_kw(
                 'uom.uom', 'search_read', [[]],
-                {'fields': ['id', 'name', 'category_id', 'uom_type', 'factor']}
+                {'fields': ['id', 'name', 'category_id', 'uom_type', 'factor', 'rounding']}
             )
+
+            # --- PASO 1: Recolección Exhaustiva (Sin Sobrescribir) ---
+            # Creamos un mapa temporal donde cada nombre de unidad puede tener múltiples definiciones
+            # si existen unidades con el mismo nombre en diferentes categorías.
+            temp_uom_map = {}
             for uom in uoms:
                 # Normalizamos el nombre de la unidad para que las búsquedas sean consistentes.
                 uom_name_clean = uom['name'].lower().strip()
-                self.uom_map[uom_name_clean] = {
+                uom_data = {
                     'id': uom['id'],
                     'category_id': uom['category_id'][0], # El ID numérico
                     'category_name': uom['category_id'][1].lower().strip(), # El nombre de la categoría (aseguramos minúsculas y sin espacios)
                     'name': uom['name'],
                     'uom_type': uom['uom_type'],
-                    'factor': uom['factor']
+                    'factor': uom['factor'],
+                    'rounding': uom['rounding']
                 }
-            print("INFO [UnitService]: Mapa de unidades de medida construido exitosamente.")
+                if uom_name_clean not in temp_uom_map:
+                    temp_uom_map[uom_name_clean] = []
+                temp_uom_map[uom_name_clean].append(uom_data)
+            
+            # Mostrar el mapa temporal para depuración, como se solicitó.
+            print("\n--- INICIO: Mapa Temporal de Unidades de Odoo (temp_uom_map) ---")
+            for name, uom_list in temp_uom_map.items():
+                print(f"  '{name}': [")
+                for uom_info in uom_list:
+                    print(f"    {{'id': {uom_info['id']}, 'name': '{uom_info['name']}', 'category_name': '{uom_info['category_name']}'}}")
+                print("  ]")
+            print("--- FIN: Mapa Temporal de Unidades de Odoo ---\n")
+
+            # --- PASO 2: Filtrado y Selección Inteligente ---
+            # Definimos un orden de prioridad para las categorías. Las más específicas y deseables primero.
+            # 'unsorted' no está aquí, lo que significa que tendrá la prioridad más baja (float('inf')).
+            CATEGORY_PRIORITY = {
+                'weight': 1,
+                'length / distance': 2,
+                'unit': 3,
+                'working time': 4, # Añadimos 'working time' como categoría válida
+            }
+
+            for uom_name_clean, uom_list in temp_uom_map.items():
+                best_uom = None
+                best_priority = float('inf') # Prioridad inicial muy baja
+
+                for uom_info in uom_list:
+                    category_name = uom_info['category_name']
+                    # Asignamos una prioridad muy baja a categorías no definidas o 'unsorted'
+                    current_priority = CATEGORY_PRIORITY.get(category_name, float('inf'))
+
+                    if current_priority < best_priority:
+                        best_priority = current_priority
+                        best_uom = uom_info
+                    elif current_priority == best_priority and best_uom is not None:
+                        # Ambiguity: Multiple units with the same name and same highest priority category.
+                        raise ValueError(
+                            f"ERROR [UnitService]: Ambiguity detectada para la unidad '{uom_name_clean}'. "
+                            f"Múltiples definiciones encontradas en la misma categoría de alta prioridad '{category_name}'. "
+                            "Por favor, corrija la configuración de unidades en Odoo."
+                        )
+                
+                # Si después de la selección, encontramos una unidad válida (con una categoría prioritaria), la añadimos al mapa.
+                # Si no, simplemente la ignoramos y continuamos, en lugar de lanzar un error.
+                if best_uom and best_priority != float('inf'):
+                    self.uom_map[uom_name_clean] = best_uom
+                else:
+                    print(f"INFO [UnitService]: Ignorando unidad '{uom_name_clean}' por tener categoría no prioritaria ('{uom_list[0]['category_name']}').")
+
+            print("INFO [UnitService]: Mapa de unidades de medida construido y saneado exitosamente.")
         except Exception as e:
             print(f"ERROR [UnitService]: Fallo al construir el mapa de unidades: {e}")
 
@@ -119,25 +175,11 @@ class UnitService:
 
         # Validar que ambas unidades pertenezcan a la misma categoría.
         if from_unit_info['category_id'] != to_unit_info['category_id']:
-            print(f"ADVERTENCIA [UnitService]: Las unidades '{from_unit_name}' y '{to_unit_name}' están en categorías diferentes en Odoo. Intentando conversión manual.")
-            
-            # --- LÓGICA DE RESCATE ---
-            # Si la conversión estándar falla por categorías, aplicamos reglas de sentido común.
-            from_unit = from_unit_name.lower()
-            to_unit = to_unit_name.lower()
-
-            # Conversiones de Peso
-            if from_unit == 'g' and to_unit == 'kg': return quantity / 1000.0
-            if from_unit == 'kg' and to_unit == 'g': return quantity * 1000.0
-
-            # Conversiones de Longitud
-            if from_unit == 'mm' and to_unit == 'm': return quantity / 1000.0
-            if from_unit == 'm' and to_unit == 'mm': return quantity * 1000.0
-            if from_unit == 'cm' and to_unit == 'm': return quantity / 100.0
-            if from_unit == 'm' and to_unit == 'cm': return quantity * 100.0
-
-            # Si ninguna regla de rescate aplica, entonces sí fallamos.
-            print(f"ERROR [UnitService]: No se encontró una regla de conversión manual para '{from_unit_name}' -> '{to_unit_name}'. La conversión ha fallado.")
+            # --- LÓGICA DE RESCATE (COMENTADA PARA PRUEBAS - ELIMINAR SI TODO FUNCIONA CORRECTAMENTE) ---
+            # Esta sección se usaba para conversiones manuales entre categorías no compatibles en Odoo.
+            # Con la nueva lógica de _build_uom_map, esto debería indicar un problema de configuración real en Odoo
+            # o un intento de conversión lógicamente incorrecta (ej. kg a metros).
+            print(f"ERROR [UnitService]: Las unidades '{from_unit_name}' (categoría '{from_unit_info['category_name']}') y '{to_unit_name}' (categoría '{to_unit_info['category_name']}') no pertenecen a la misma categoría en Odoo y no son compatibles para la conversión.")
             return None
 
         # Paso 1: Convertir la cantidad de origen a la unidad de referencia de la categoría.
